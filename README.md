@@ -39,14 +39,12 @@ export const YourApp = () => (
             <form {...form}>
                 <Field
                     name="my-field"
-                    render={({ input }) => (
-                        <input type="text" {...input} />
-                    )}
+                    render={({ input }) => <input type="text" {...input} />}
                 />
             </form>
         )}
-    >
-)
+    />
+);
 ```
 
 You are probably going to want to factor out those render methods into functional components:
@@ -55,23 +53,13 @@ You are probably going to want to factor out those render methods into functiona
 import React from "react";
 import { Form } from "form-and-function";
 
-const TextInput = ({ input }) => (
-    <input type="text" {...input} />
-);
+const TextInput = ({ input }) => <input type="text" {...input} />;
 
 const RenderForm = ({ form, Field }) => (
     <form {...form}>
-        <Field
-            name="my-field"
-            render={TextInput}
-        />
+        <Field name="my-field" render={TextInput} />
     </form>
 );
 
-export const YourApp = () => (
-    <Form
-        name="my-form"
-        render={RenderForm}
-    >
-)
+export const YourApp = () => <Form name="my-form" render={RenderForm} />;
 ```
