@@ -2,6 +2,10 @@
     "name": "form-and-function",
     "version": "0.1.0",
     "dependencies": {},
+    "peerDependencies": {
+        "react": "^15",
+        "react-dom": "^15"
+    },
     "devDependencies": {
         "@types/deep-equal": "^1.0.1",
         "@types/jest": "^22.0.1",
