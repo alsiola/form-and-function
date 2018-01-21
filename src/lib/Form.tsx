@@ -27,7 +27,7 @@ export interface InjectedFormProps<
     TFieldOwnProps extends object | void = void
 > {
     Field: React.StatelessComponent<FieldProps<TFieldOwnProps>>;
-    input: React.DetailedHTMLProps<
+    form: React.DetailedHTMLProps<
         React.FormHTMLAttributes<HTMLFormElement>,
         HTMLFormElement
     >;
@@ -236,7 +236,7 @@ export class Form<
                 reset: this.reset,
                 submit
             },
-            input: {
+            form: {
                 name,
                 onSubmit: submit
             }

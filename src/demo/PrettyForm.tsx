@@ -17,13 +17,13 @@ export interface PrettyFormProps {
 export const PrettyForm: React.SFC<
     InjectedFormProps<PrettyFormProps, PrettyFieldProps>
 > = ({
-    input,
+    form,
     meta: { valid, errors, submitted },
     actions: { reset },
     ownProps: { fields, title },
     Field
 }) => (
-    <Form {...input} size="huge" error={true}>
+    <Form {...form} size="huge" error={true}>
         <Header as="h2">{title}</Header>
         {fields.map(({ name, label, hint }) => (
             <Field

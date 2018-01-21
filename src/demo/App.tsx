@@ -49,7 +49,7 @@ class App extends React.Component {
         return (
             <Segment padded="very">
                 <Form
-                    name="test"
+                    name="simple form"
                     validators={validators}
                     initialValues={initialValues}
                     onSubmit={this.handleSubmit}
