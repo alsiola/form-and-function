@@ -56,6 +56,7 @@ export interface FormProps<T extends object | void, U extends object | void> {
     onSubmitFailed?: EventHandler;
     onChange?: EventHandler;
     renderProps?: T;
+    stateEngine?: StateEngine<FormState>;
 }
 
 export interface FormState {
@@ -67,6 +68,14 @@ export class Form<
     T extends object | void,
     U extends object | void
 > extends React.Component<FormProps<T, U>, FormState> {
+    static defaultProps: Partial<FormProps<any, any>> = {
+        initialValues: {},
+        onSubmit: () => {},
+        onSubmitFailed: () => {},
+        onChange: () => {},
+        renderProps: {}
+    };
+
     private Field: React.StatelessComponent<FieldProps<U>>;
     private stateEngine: StateEngine<FormState>;
 
@@ -77,10 +86,12 @@ export class Form<
      */
     constructor(props: FormProps<T, U>) {
         super(props);
-        this.stateEngine = componentStateEngine(this, {
-            fields: {},
-            submitted: false
-        });
+        this.stateEngine =
+            props.stateEngine ||
+            componentStateEngine(this, {
+                fields: {},
+                submitted: false
+            });
         this.makeField();
     }
 
@@ -116,7 +127,7 @@ export class Form<
      * Allows Fields to get to their initial state
      */
     private getInitialValue = (name: string) =>
-        (this.props.initialValues || {})[name] || "";
+        (this.props.initialValues as FieldValueMap)[name] || "";
 
     /**
      * Is every field passing validation
@@ -149,8 +160,9 @@ export class Form<
      * If a form onChange handler was passed as a prop, call it
      */
     private handleFieldChange = () => {
-        this.props.onChange &&
-            this.props.onChange(this.stateEngine.select(s => s.fields));
+        (this.props.onChange as EventHandler)(
+            this.stateEngine.select(s => s.fields)
+        );
     };
 
     /**
@@ -165,9 +177,9 @@ export class Form<
     ) => (e?: SyntheticEvent<any>) => {
         e && e.preventDefault();
         this.stateEngine.set({ submitted: true });
-        onSubmit && valid
-            ? onSubmit(fields)
-            : onFailedSubmit && onFailedSubmit(fields);
+        valid
+            ? (onSubmit as EventHandler)(fields)
+            : (onFailedSubmit as EventHandler)(fields);
     };
 
     render() {
@@ -212,7 +224,7 @@ export class Form<
         );
 
         return render({
-            ownProps: renderProps || ({} as T),
+            ownProps: renderProps as T,
             meta: {
                 valid,
                 submitted,

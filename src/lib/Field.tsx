@@ -76,6 +76,10 @@ export const makeField = (
     stateEngine: StateEngine<FormState>
 ) =>
     class Field<T extends object> extends React.Component<FieldProps<T>, void> {
+        static defaultProps: Partial<FieldProps<any>> = {
+            renderProps: {}
+        };
+
         /**
          * When Field is instantiated we need to set up its state
          * record in the parent Form
@@ -205,7 +209,7 @@ export const makeField = (
             const pristine = value === formActions.getInitialValue(name);
 
             return render({
-                ownProps: renderProps || ({} as T),
+                ownProps: renderProps as T,
                 input: {
                     onChange: this.handleChange,
                     onFocus: this.handleFocus,
