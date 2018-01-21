@@ -1,6 +1,11 @@
 import { Component } from "react";
 import { FormState } from "./Form";
 
+/**
+ * Internally state engine is used to allow Fields to retrieve/update
+ * Forms state.  The library is agnostic to the mechanism of state
+ * storage.
+ */
 export interface StateEngine<T> {
     select: <U>(selector: (state: T) => U) => U;
     set: <K extends keyof T>(
@@ -11,6 +16,10 @@ export interface StateEngine<T> {
 
 export type FormStateEngine = StateEngine<FormState>;
 
+/**
+ * Provides an implementation of StateEngine<FormState> using a
+ * components internal state
+ */
 export const componentStateEngine = (
     componentInstance: Component<any, FormState>,
     initialState: FormState

@@ -34,16 +34,27 @@ export interface ValidationResult {
     [key: string]: ValidationFieldResult;
 }
 
+/**
+ * Passed to validation functions to be called when value is valid
+ */
 export const validFn: Reporter = () => ({
     valid: true,
     error: ""
 });
 
+/**
+ * Passed to validation functions to be called when value is invalid
+ * @param error An error message - why is the value invalid?
+ */
 export const invalidFn: Reporter = (error: string) => ({
     valid: false,
     error
 });
 
+/**
+ * Passes the validation reporters to each entry in an object
+ * @param validationMap Object of field validators { [ fieldName: string ]: ValidationFunction }
+ */
 const create: MakeValidator<FieldValue> = validationMap =>
     Object.entries(validationMap).reduce(
         (out, [key, value]) => ({
@@ -69,6 +80,11 @@ export interface NumericMessages extends NotUndefinedMessage {
     nonNumeric?: (val: string) => string;
 }
 
+/**
+ * Validates that a value is at least {chars} long
+ * @param chars Minimum number of characters
+ * @param msg Error messages when invalid
+ */
 const atLeastXChars = (
     chars: number,
     msg?: AtLeastXCharsMessages
@@ -86,6 +102,11 @@ const atLeastXChars = (
           );
 };
 
+/**
+ * Validates that a value is at most {chars} long
+ * @param chars Maximum number of characters
+ * @param msg Error messages when invalid
+ */
 const atMostXChars = (
     chars: number,
     msg?: AtMostXCharsMessages
@@ -103,6 +124,10 @@ const atMostXChars = (
           );
 };
 
+/**
+ * Validates that a value is only numbers
+ * @param msg Error messages when invalid
+ */
 const numeric = (msg?: NumericMessages): ValidationFnWithReporters<string> => ({
     valid,
     invalid
@@ -120,6 +145,11 @@ const numeric = (msg?: NumericMessages): ValidationFnWithReporters<string> => ({
           );
 };
 
+/**
+ * Combines validators so that all must be valid
+ * @param validators Validators to combine
+ * @param combiner How to combine error messages
+ */
 const all = <T>(
     validators: Array<ValidationFnWithReporters<T>>,
     combiner?: (errors: string[]) => string

@@ -36,8 +36,7 @@ const validators = validation.create({
 });
 
 const initialValues = {
-    field1: "123",
-    field2: "hello"
+    field1: "123"
 };
 
 class App extends React.Component {

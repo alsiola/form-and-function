@@ -5,6 +5,11 @@ import { StateEngine } from "./stateEngine";
 import { ValidationFieldResult } from "./validators";
 import { FieldValue } from "./index";
 
+/**
+ * These props are provided to the component provided as renderer
+ * to the Field component.  T is the type of the render components
+ * own props, that will be provided via Fields renderProps prop
+ */
 export interface InjectedFieldProps<T extends object | void> {
     meta: {
         valid: boolean;
@@ -22,21 +27,18 @@ export interface InjectedFieldProps<T extends object | void> {
     ownProps: T;
 }
 
+/**
+ * Field meta values provided by form-and-function
+ */
 export interface FieldMeta {
     touched: boolean;
     active: boolean;
     validation: ValidationFieldResult;
 }
 
-export interface FormActions {
-    onChange: () => void;
-    validate: (
-        name: string,
-        x: FieldValue | undefined
-    ) => Promise<ValidationFieldResult>;
-    getInitialValue: (name: string) => FieldValue | undefined;
-}
-
+/**
+ * Props passed to the injected Field component when it is used
+ */
 export interface FieldProps<T extends object | void = void> {
     name: string;
     renderProps?: T;
@@ -51,37 +53,67 @@ export interface FieldRecordAny<T = FieldMeta | Partial<FieldMeta>> {
 export type FieldRecord = FieldRecordAny<FieldMeta>;
 export type FieldRecordUpdate = FieldRecordAny<Partial<FieldMeta>>;
 
+/**
+ * This is provided by the Form component when it calls makeField to
+ * allow the Field to retrieve state from Form, and to indicate when
+ * its value has changed
+ */
+interface FormActions {
+    onChange: () => void;
+    validate: (
+        name: string,
+        x: FieldValue | undefined
+    ) => Promise<ValidationFieldResult>;
+    getInitialValue: (name: string) => FieldValue | undefined;
+}
+
+/**
+ * formActions allow the field to trigger functions within the parent
+ * stateEngine allows the field to update and retrieve values from its parents state
+ */
 export const makeField = (
     formActions: FormActions,
     stateEngine: StateEngine<FormState>
-): React.SFC<FieldProps> =>
-    class Field<T extends object> extends React.Component<
-        FieldProps<T>,
-        FieldMeta
-    > {
+) =>
+    class Field<T extends object> extends React.Component<FieldProps<T>, void> {
+        /**
+         * When Field is instantiated we need to set up its state
+         * record in the parent Form
+         */
         constructor(props: FieldProps<T>) {
             super(props);
             const initialValue = formActions.getInitialValue(props.name);
 
+            // Setup initial state with validation as true
+            this.updateState({
+                meta: {
+                    touched: false,
+                    active: false,
+                    validation: {
+                        valid: true,
+                        error: ""
+                    }
+                },
+                value: initialValue
+            });
+
+            // Run validation on initialValue and update
             formActions
                 .validate(props.name, formActions.getInitialValue(props.name))
                 .then(validation => {
-                    stateEngine.set(state => ({
-                        fields: {
-                            ...state.fields,
-                            [props.name]: {
-                                meta: {
-                                    touched: false,
-                                    active: false,
-                                    validation
-                                },
-                                value: initialValue
-                            }
+                    this.updateState({
+                        meta: {
+                            validation
                         }
-                    }));
+                    });
                 });
         }
 
+        /**
+         * Take a partial update to the fields state (stored in Form) and
+         * convert it into an update that can be applied to the Form state
+         * without losing other field's state
+         */
         updateState = (
             fieldState: Partial<FieldRecordUpdate>
         ): Promise<void> => {
@@ -128,9 +160,15 @@ export const makeField = (
                 }
             });
 
+        /**
+         * When the field changes we need to update the value in the parent Form
+         * and rerun validation. As validation can be async then Promise.all
+         * ensures that we immediately update the value even if validtion takes
+         * some time. Returned promise is not currently used.
+         */
         handleChange = (e: SyntheticEvent<any>) => {
             const newValue = e.currentTarget.value;
-            Promise.all([
+            return Promise.all([
                 this.updateState({
                     value: newValue
                 }).then(formActions.onChange),
@@ -147,20 +185,22 @@ export const makeField = (
         };
 
         render() {
-            const fieldState = stateEngine.select(
-                s => s.fields[this.props.name]
-            );
+            const { name, render, renderProps } = this.props;
 
-            if (!fieldState) {
+            const state = stateEngine.select(s => s.fields[name]);
+
+            /** If field does not have an initialValue, then it won't have a record
+             *  added to form state until the constructor async setters have run, so
+             * we return null until the Form's record for this field is available
+             */
+            if (!state) {
                 return null;
             }
 
-            const { name, render, renderProps } = this.props;
-
-            const { value, meta: { touched, active, validation } } = fieldState;
-
-            const isValid = validation ? validation.valid : true;
-            const isError = validation ? validation.error : "";
+            const {
+                value,
+                meta: { touched, active, validation: { valid, error } }
+            } = state;
 
             const pristine = value === formActions.getInitialValue(name);
 
@@ -173,12 +213,13 @@ export const makeField = (
                     value
                 },
                 meta: {
-                    valid: isValid,
-                    error: isError,
+                    valid,
+                    error,
                     pristine,
                     touched,
                     active
                 }
             });
         }
-    } as any;
+        // Typed as any because although
+    };
