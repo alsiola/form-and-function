@@ -43,6 +43,9 @@ export interface FieldProps<T extends object | void = void> {
     name: string;
     renderProps?: T;
     render: React.SFC<InjectedFieldProps<T>>;
+    onChange?: EventHandler<SyntheticEvent<HTMLInputElement>>;
+    onFocus?: EventHandler<SyntheticEvent<HTMLInputElement>>;
+    onBlur?: EventHandler<SyntheticEvent<HTMLInputElement>>;
 }
 
 export interface FieldRecordAny<T = FieldMeta | Partial<FieldMeta>> {
@@ -171,20 +174,25 @@ export const makeField = (
          * some time. Returned promise is not currently used.
          */
         handleChange = (e: SyntheticEvent<any>) => {
-            const newValue = e.currentTarget.value;
+            // Pulled into a variable so we don't lose this when the event is disposed
+            const { value } = e.currentTarget;
+            const { onChange, onBlur, onFocus } = this.props;
+
+            onChange && onChange(e);
+            onBlur && onBlur(e);
+            onFocus && onFocus(e);
+
             return Promise.all([
                 this.updateState({
-                    value: newValue
+                    value
                 }).then(formActions.onChange),
-                formActions
-                    .validate(this.props.name, newValue)
-                    .then(validation =>
-                        this.updateState({
-                            meta: {
-                                validation
-                            }
-                        })
-                    )
+                formActions.validate(this.props.name, value).then(validation =>
+                    this.updateState({
+                        meta: {
+                            validation
+                        }
+                    })
+                )
             ]);
         };
 
@@ -193,8 +201,9 @@ export const makeField = (
 
             const state = stateEngine.select(s => s.fields[name]);
 
-            /** If field does not have an initialValue, then it won't have a record
-             *  added to form state until the constructor async setters have run, so
+            /**
+             * If field does not have an initialValue, then it won't have a record
+             * added to form state until the constructor async setters have run, so
              * we return null until the Form's record for this field is available
              */
             if (!state) {
@@ -225,5 +234,4 @@ export const makeField = (
                 }
             });
         }
-        // Typed as any because although
     };

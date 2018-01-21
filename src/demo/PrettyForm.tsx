@@ -29,6 +29,7 @@ export const PrettyForm: React.SFC<
             <Field
                 key={name}
                 name={name}
+                onChange={console.log}
                 render={PrettyField}
                 renderProps={{
                     label,
