@@ -36,6 +36,7 @@ export interface InjectedFormProps<
         valid: boolean;
         submitted: boolean;
         errors: ValidationResult;
+        isValidating: boolean;
     };
     actions: {
         reset: () => void;
@@ -62,6 +63,7 @@ export interface FormProps<T extends object | void, U extends object | void> {
 export interface FormState {
     fields: FieldMap;
     submitted: boolean;
+    isValidating: boolean;
 }
 
 export class Form<
@@ -90,7 +92,8 @@ export class Form<
             props.stateEngine ||
             componentStateEngine(this, {
                 fields: {},
-                submitted: false
+                submitted: false,
+                isValidating: false
             });
         this.makeField();
     }
@@ -138,6 +141,15 @@ export class Form<
         );
     };
 
+    private setValidating = (isValidating: boolean) => (
+        validationResult: ValidationFieldResult
+    ) => {
+        this.stateEngine.set({
+            isValidating
+        });
+        return validationResult;
+    };
+
     /**
      * If there is a validator for field with name of {name}
      * then run it, otherwise return valid
@@ -146,13 +158,18 @@ export class Form<
         name: string,
         value: FieldValue
     ): Promise<ValidationFieldResult> => {
+        this.stateEngine.set({
+            isValidating: true
+        });
+
         if (!this.props.validators) {
-            return validFn();
+            return Promise.resolve(validFn()).then(this.setValidating(false));
         }
 
-        return this.props.validators[name]
-            ? this.props.validators[name](value)
-            : validFn();
+        return (this.props.validators[name]
+            ? Promise.resolve(this.props.validators[name](value))
+            : Promise.resolve(validFn())
+        ).then(this.setValidating(false));
     };
 
     /**
@@ -191,7 +208,7 @@ export class Form<
             renderProps
         } = this.props;
 
-        const { submitted, fields } = this.stateEngine.get();
+        const { submitted, fields, isValidating } = this.stateEngine.get();
 
         const valid = this.allValid(fields);
 
@@ -228,7 +245,8 @@ export class Form<
             meta: {
                 valid,
                 submitted,
-                errors: validationResult
+                errors: validationResult,
+                isValidating
             },
             Field: this.Field,
             values: fields,
