@@ -258,3 +258,62 @@ an array of strings, and should return a string.
 Now we will get a much nicer looking message:
 
 `Please enter 3 characters minimum, and also numbers only`
+
+### Internationalization
+
+In the most part, `form-and-function` does not produce outputted strings but simply manages the form data, so i18n
+is handled by your own code. The exception to this is in the generation of validation errors, which may need to
+be translated. The validators above are all usable with an i18n library, such as react-intl, with very little effort.
+
+These examples assume that your application has been set up with react-intl, and you are somewhat familiar with its concepts.
+
+The `validation.create` function above has an optional second argument - a formatter. This formatter has the signature:
+
+`type Formatter<T> = (x: T, params?: Record<string, any>) => string;`
+
+Conveniently, this is the same signature as `react-intl`'s `formatMessage` function, which we can get in our component by using react-intl's `injectIntl` higher-order function. Using the custom messages option described previously, we can now return a react-intl `MessageDescriptor` instead of a string, and this will be passed to our `formatMessages` formatter, with
+the arguments passed to the validator as the second argument, with the entered value under the `value` key, i.e.
+
+```js
+{
+    chars: 3,
+    value: "whatever was entered"
+}
+```
+
+```js
+// Wherever our messages are defined
+const messages = {
+    short: {
+        id: "form.validation.short",
+        defaultMessage: "At least {chars} characters"
+    },
+    undef: {
+        id: "form.validation.undef",
+        defaultMessage: "Must be provided"
+    },
+    nonNumeric: {
+        id: "form.validation.nonNumeric",
+        defaultMessage: "Numbers only, you entered {value}"
+    }
+};
+
+// In our component
+<Form
+    validators={validation.create(
+        {
+            firstName: validation.atLeast(
+                { chars: 3 },
+                {
+                    short: () => messages.short,
+                    undef: () => messages.undef
+                }
+            ),
+            age: validation.numeric({
+                nonNumeric: () => messages.nonNumeric
+            })
+        },
+        this.props.intl.formatMessage
+    )}
+/>;
+```
