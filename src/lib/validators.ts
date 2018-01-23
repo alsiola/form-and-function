@@ -117,29 +117,29 @@ const atLeast = <T>(
     params: { chars: number },
     msg?: AtLeastXCharsMessages<T>
 ) => ({ valid, invalid }: Reporters, formatter: Formatter<T>) => (
-    val: string
+    value: string
 ) => {
-    if (!val) {
+    if (!value) {
         return invalid(
             formatter(
                 msg && msg.undef
                     ? msg.undef()
                     : (`Please enter a value` as any),
-                params
+                { ...params, value }
             )
         );
     }
 
-    return val.length >= params.chars
+    return value.length >= params.chars
         ? valid()
         : invalid(
               formatter(
                   msg && msg.short
-                      ? msg.short(val)
+                      ? msg.short(value)
                       : (`Entry must be at least ${
                             params.chars
                         } characters long` as any),
-                  params
+                  { ...params, value }
               )
           );
 };
@@ -152,21 +152,21 @@ const atLeast = <T>(
 const atMost = <T>(params: { chars: number }, msg: AtMostXCharsMessages<T>) => (
     { valid, invalid }: Reporters,
     formatter: Formatter<T>
-) => (val: string) => {
-    if (!val) {
+) => (value: string) => {
+    if (!value) {
         return valid();
     }
 
-    return val.length <= params.chars
+    return value.length <= params.chars
         ? valid()
         : invalid(
               formatter(
                   msg && msg.long
-                      ? msg.long(val)
+                      ? msg.long(value)
                       : (`Entry must be no more than ${
                             params.chars
                         } characters long` as any),
-                  params
+                  { ...params, value }
               )
           );
 };
@@ -178,18 +178,19 @@ const atMost = <T>(params: { chars: number }, msg: AtMostXCharsMessages<T>) => (
 const numeric = <T>(msg?: NumericMessages<T>) => (
     { valid, invalid }: Reporters,
     formatter: Formatter<T>
-) => (val: string) => {
-    if (typeof val === "undefined") {
+) => (value: string) => {
+    if (typeof value === "undefined") {
         return valid();
     }
 
-    return /^[0-9]*$/.test(val || "")
+    return /^[0-9]*$/.test(value || "")
         ? valid()
         : invalid(
               formatter(
                   msg && msg.nonNumeric
-                      ? msg.nonNumeric(val)
-                      : (`Entered value must be a number` as any)
+                      ? msg.nonNumeric(value)
+                      : (`Entered value must be a number` as any),
+                  { value }
               )
           );
 };
