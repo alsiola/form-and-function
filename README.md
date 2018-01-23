@@ -1,6 +1,6 @@
 # form-and-function
 
-form-and-function is a functional-inspired Form management library for React.
+form-and-function is a functional-inspired Form management library for React, written in TypeScript.
 
 ## What problem is solved?
 
@@ -8,6 +8,11 @@ Managing form state can be a pain, and the need for a form management abstractio
 established. redux-form is great at what it does, but depends upon you using a particular state-management
 solution. I wanted to create a state-management agnostic library (using simple component state by default) that
 provides similar convenience and ease of use. Additionally, internationalization is supported from the outset.
+
+## Examples
+
+There are several examples in the `demo` folder of this repository. If anything is unclear then raise an issue,
+or tweet me @bigalreturns
 
 ## Installation
 
