@@ -1,54 +1,22 @@
 import * as React from "react";
+import { Segment, Button, ButtonGroup, Divider } from "semantic-ui-react";
 import {
     IntlProvider,
     injectIntl,
     InjectedIntlProps,
-    Messages,
     FormattedMessage,
     addLocaleData
 } from "react-intl";
 import * as en from "react-intl/locale-data/en";
 import * as fr from "react-intl/locale-data/fr";
 
+import { messages } from "./messages";
+import { translations } from "./translations";
 import { PrettyForm } from "./PrettyForm";
-import { Segment } from "semantic-ui-react";
-
-addLocaleData([...en, ...fr]);
 
 import { Form, validation, Formatter } from "../lib";
 
-const messages: Messages = {
-    start: {
-        id: "formvalidation.start",
-        defaultMessage: "Must be "
-    },
-    short: {
-        id: "formvalidation.short",
-        defaultMessage: "at least {chars} characters"
-    },
-    long: {
-        id: "formvalidation.long",
-        defaultMessage: "at most {chars} characters"
-    },
-    undef: {
-        id: "formvalidation.undef",
-        defaultMessage: "provided"
-    },
-    combine: {
-        id: "formvalidation.combine",
-        defaultMessage: " and "
-    }
-};
-
-const translations: Record<string, Record<string, string>> = {
-    fr: {
-        "formvalidation.start": "Doit être ",
-        "formvalidation.short": "au maximum de {chars} caractères",
-        "formvalidation.long": "au minimum de {chars} caractères",
-        "formvalidation.undef": "fourni",
-        "formvalidation.combine": " et "
-    }
-};
+addLocaleData([...en, ...fr]);
 
 const fields = [
     {
@@ -132,14 +100,18 @@ const initialValues = {
     field1: "123"
 };
 
-class FormDemo extends React.Component<InjectedIntlProps> {
+export interface FormDemoOwnProps {
+    changeLocale: (locale: string) => () => void;
+}
+
+class FormDemo extends React.Component<FormDemoOwnProps & InjectedIntlProps> {
     handleSubmit = (values: object) => console.log("submitted", values);
 
     handleFailedSubmit = (values: object) =>
         console.log("failed submit", values);
 
     render() {
-        const { formatMessage } = this.props.intl;
+        const { intl: { formatMessage }, changeLocale } = this.props;
         return (
             <div>
                 <Segment padded="very">
@@ -158,6 +130,11 @@ class FormDemo extends React.Component<InjectedIntlProps> {
                 </Segment>
 
                 <Segment padded="very">
+                    <ButtonGroup>
+                        <Button onClick={changeLocale("en")}>Go English</Button>
+                        <Button onClick={changeLocale("fr")}>Go French</Button>
+                    </ButtonGroup>
+                    <Divider />
                     <Form
                         name="translated error form"
                         validators={translatedValidators(formatMessage)}
@@ -176,27 +153,24 @@ class FormDemo extends React.Component<InjectedIntlProps> {
     }
 }
 
-const FormDemoWithIntl = (injectIntl(FormDemo) as any) as React.SFC<{}>;
+const FormDemoWithIntl = injectIntl(FormDemo) as React.ComponentClass<
+    FormDemoOwnProps
+>;
 
 class App extends React.Component<{}, { locale: string }> {
     state = {
         locale: "en"
     };
+
+    changeLocale = (locale: string) => () => this.setState({ locale });
+
     render() {
         return (
             <IntlProvider
                 locale={this.state.locale}
                 messages={translations[this.state.locale]}
             >
-                <div>
-                    <button onClick={() => this.setState({ locale: "en" })}>
-                        Go English
-                    </button>
-                    <button onClick={() => this.setState({ locale: "fr" })}>
-                        Go French
-                    </button>
-                    <FormDemoWithIntl />
-                </div>
+                <FormDemoWithIntl changeLocale={this.changeLocale} />
             </IntlProvider>
         );
     }
