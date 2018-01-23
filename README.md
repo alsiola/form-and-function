@@ -155,9 +155,9 @@ import { Form, validation }
 
 If this looks long-winded then say hello to some built in validators! Currently we provide the following:
 
-    * `validation.atLeast` - Is the value at least some length.
-    * `validation.atMost` - Is the value at most some length.
-    * `validation.numeric` - Is the value numeric only.
+* `validation.atLeast` - Is the value at least some length.
+* `validation.atMost` - Is the value at most some length.
+* `validation.numeric` - Is the value numeric only.
 
 They can be used as follows:
 
