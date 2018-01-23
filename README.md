@@ -281,6 +281,8 @@ the arguments passed to the validator as the second argument, with the entered v
 }
 ```
 
+An internationalized form might use validators like this:
+
 ```js
 // Wherever our messages are defined
 const messages = {
