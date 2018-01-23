@@ -7,7 +7,7 @@ form-and-function is a functional-inspired Form management library for React.
 Managing form state can be a pain, and the need for a form management abstraction is reasonably well
 established. redux-form is great at what it does, but depends upon you using a particular state-management
 solution. I wanted to create a state-management agnostic library (using simple component state by default) that
-provides similar convenience and ease of use.
+provides similar convenience and ease of use. Additionally, internationalization is supported from the outset.
 
 ## Installation
 
@@ -130,3 +130,127 @@ export const YourApp = () => (
     />
 );
 ```
+
+### Validation
+
+Validation follows a single route - a validators function is passed to the `Form` component, which should return entries
+for any field that requires validation. This function is called with two "reporters" - `valid` and `invalid` - which
+should be called by each individual field's validator depending on the validity of the field. `valid` takes
+no arguments, and `invalid` should be called with a string describing the validation error.
+
+A convenience function `validators.create` is provided, which will pass `valid` and `invalid` to each entry in
+a provided object.
+
+It's much easier to see it in some code, so if our form has fields named `firstName`, `telephone` and `password`,
+and we want to validate `firstName`, we would use:
+
+```js
+import { Form, validation }
+<Form
+    validators={validation.create({
+        firstName: ({ valid, invalid }) => value => value.length < 3 ? valid() : invalid(`Must be more than 3 chars.`)
+    })}
+/>
+```
+
+If this looks long-winded then say hello to some built in validators! Currently we provide the following:
+
+    * `validation.atLeast` - Is the value at least some length.
+    * `validation.atMost` - Is the value at most some length.
+    * `validation.numeric` - Is the value numeric only.
+
+They can be used as follows:
+
+#### numeric
+
+```js
+import { Form, validation }
+<Form
+    validators={validation.create({
+        age: validation.numeric()
+    })}
+/>
+```
+
+#### atLeast/atMost
+
+```js
+import { Form, validation }
+<Form
+    validators={validation.create({
+        firstName: validation.atLeast({ chars: 3 })
+    })}
+/>
+```
+
+#### Custom Validation Errors
+
+If customised error messages are needed, then an object of error message functions can be passed to the validator - the only
+argument to `numeric`, or the second argument to `atLeast`/`atMost`. All message functions are optional, and they will be
+passed the invalid value as an argument.
+
+```js
+import { Form, validation }
+<Form
+    validators={validation.create({
+        firstName: validation.atLeast({ chars: 3 }, {
+            short: () => "Please enter 3 characters minimum",
+            undef: () => "You must enter a message"
+        }),
+        age: validation.numeric({
+            nonNumeric: enteredValue => `Please enter a number - you entered ${enteredValue}`
+        })
+    })}
+/>
+```
+
+#### Combining Validators
+
+The inbuilt validators can be combined to validate on multiple conditions. As an example, we might want to
+check if a field is numeric AND more than 5 characters. This is achieved with `validation.all`, which we can pass
+an array of validators.
+
+```js
+import { Form, validation }
+<Form
+    validators={validation.all({
+        longNumber: validation.combine([
+            validation.atLeast({ chars: 3 }, {
+                short: () => "Please enter 3 characters minimum",
+                undef: () => "You must enter a message"
+            }),
+            validation.numeric({
+                nonNumeric: () => `Please enter a number`
+            })
+        ])
+    })}
+/>
+```
+
+By default, error messages produced in `validation.all` are joined with " and " - this would produce an error such as:
+
+`Please enter 3 characters minimum and Please enter a number`
+
+Not quite perfect. We can pass a second argument to `validation.all`, which is an error combining function. It is passed
+an array of strings, and should return a string.
+
+```js
+import { Form, validation }
+<Form
+    validators={validation.all({
+        longNumber: validation.combine([
+            validation.atLeast({ chars: 3 }, {
+                short: () => "3 characters minimum",
+                undef: () => "provided"
+            }),
+            validation.numeric({
+                nonNumeric: () => `numbers only`
+            })
+        ], errors => "Please enter " + errors.join(", and also ")
+    })}
+/>
+```
+
+Now we will get a much nicer looking message:
+
+`Please enter 3 characters minimum, and also numbers only`
