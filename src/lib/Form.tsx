@@ -4,9 +4,10 @@ import { FieldProps, FieldRecord, makeField } from "./Field";
 import { SyntheticEvent } from "react";
 import {
     validFn,
+    FieldResult,
+    isInvalidResult,
     ValidatorFn,
-    ValidationResult,
-    ValidationFieldResult
+    ValidationErrors
 } from "./validators";
 
 export type FieldValue = string | boolean | number;
@@ -35,7 +36,7 @@ export interface InjectedFormProps<
     meta: {
         valid: boolean;
         submitted: boolean;
-        errors: ValidationResult;
+        errors: ValidationErrors;
         isValidating: boolean;
     };
     actions: {
@@ -63,7 +64,6 @@ export interface FormProps<T extends object | void, U extends object | void> {
 export interface FormState {
     fields: FieldMap;
     submitted: boolean;
-    isValidating: boolean;
 }
 
 export class Form<
@@ -92,8 +92,7 @@ export class Form<
             props.stateEngine ||
             componentStateEngine(this, {
                 fields: {},
-                submitted: false,
-                isValidating: false
+                submitted: false
             });
         this.makeField();
     }
@@ -141,15 +140,6 @@ export class Form<
         );
     };
 
-    private setValidating = (isValidating: boolean) => (
-        validationResult: ValidationFieldResult
-    ) => {
-        this.stateEngine.set({
-            isValidating
-        });
-        return validationResult;
-    };
-
     /**
      * If there is a validator for field with name of {name}
      * then run it, otherwise return valid
@@ -157,19 +147,14 @@ export class Form<
     private validate = async (
         name: string,
         value: FieldValue
-    ): Promise<ValidationFieldResult> => {
-        this.stateEngine.set({
-            isValidating: true
-        });
-
+    ): Promise<FieldResult> => {
         if (!this.props.validators) {
-            return Promise.resolve(validFn()).then(this.setValidating(false));
+            return validFn();
         }
 
-        return (this.props.validators[name]
-            ? Promise.resolve(this.props.validators[name](value))
-            : Promise.resolve(validFn())
-        ).then(this.setValidating(false));
+        const validator = this.props.validators[name];
+
+        return validator ? validator(value) : validFn();
     };
 
     /**
@@ -208,7 +193,7 @@ export class Form<
             renderProps
         } = this.props;
 
-        const { submitted, fields, isValidating } = this.stateEngine.get();
+        const { submitted, fields } = this.stateEngine.get();
 
         const valid = this.allValid(fields);
 
@@ -224,14 +209,18 @@ export class Form<
                       Object.assign(
                           {},
                           out,
-                          value.meta.validation.error
+                          isInvalidResult(value.meta.validation)
                               ? {
                                     [key]: value.meta.validation
                                 }
                               : {}
                       ),
-                  {} as ValidationResult
+                  {} as ValidationErrors
               );
+
+        const isValidating = Object.values(fields).some(
+            field => field.meta.isValidating
+        );
 
         const submit = this.handleSubmit(
             onSubmit,

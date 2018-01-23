@@ -2,8 +2,8 @@ import * as React from "react";
 import { EventHandler, SyntheticEvent } from "react";
 import { FormState } from "./Form";
 import { StateEngine } from "./stateEngine";
-import { ValidationFieldResult } from "./validators";
-import { FieldValue } from "./index";
+import { FieldResult, isInvalidResult } from "./validators";
+import { FieldValue } from "./Form";
 
 /**
  * These props are provided to the component provided as renderer
@@ -13,10 +13,11 @@ import { FieldValue } from "./index";
 export interface InjectedFieldProps<T extends object | void> {
     meta: {
         valid: boolean;
-        error: string;
+        error?: string;
         pristine: boolean;
         touched: boolean;
         active: boolean;
+        isValidating: boolean;
     };
     input: {
         onChange: EventHandler<SyntheticEvent<HTMLInputElement>>;
@@ -33,7 +34,8 @@ export interface InjectedFieldProps<T extends object | void> {
 export interface FieldMeta {
     touched: boolean;
     active: boolean;
-    validation: ValidationFieldResult;
+    validation: FieldResult;
+    isValidating: boolean;
 }
 
 /**
@@ -63,10 +65,7 @@ export type FieldRecordUpdate = FieldRecordAny<Partial<FieldMeta>>;
  */
 interface FormActions {
     onChange: () => void;
-    validate: (
-        name: string,
-        x: FieldValue | undefined
-    ) => Promise<ValidationFieldResult>;
+    validate: (name: string, x: FieldValue | undefined) => Promise<FieldResult>;
     getInitialValue: (name: string) => FieldValue | undefined;
 }
 
@@ -97,9 +96,9 @@ export const makeField = (
                     touched: false,
                     active: false,
                     validation: {
-                        valid: true,
-                        error: ""
-                    }
+                        valid: true
+                    },
+                    isValidating: false
                 },
                 value: initialValue
             });
@@ -141,7 +140,12 @@ export const makeField = (
                             validation:
                                 fieldState.meta && fieldState.meta.validation
                                     ? fieldState.meta.validation
-                                    : state.fields[name].meta.validation
+                                    : state.fields[name].meta.validation,
+                            isValidating:
+                                fieldState.meta &&
+                                "isValidating" in fieldState.meta
+                                    ? (fieldState.meta.isValidating as boolean)
+                                    : state.fields[name].meta.isValidating
                         },
                         value:
                             "value" in fieldState
@@ -186,12 +190,21 @@ export const makeField = (
                 this.updateState({
                     value
                 }).then(formActions.onChange),
-                formActions.validate(this.props.name, value).then(validation =>
-                    this.updateState({
-                        meta: {
-                            validation
-                        }
-                    })
+                this.updateState({
+                    meta: {
+                        isValidating: true
+                    }
+                }).then(() =>
+                    formActions
+                        .validate(this.props.name, value)
+                        .then(validation =>
+                            this.updateState({
+                                meta: {
+                                    validation,
+                                    isValidating: false
+                                }
+                            })
+                        )
                 )
             ]);
         };
@@ -212,8 +225,14 @@ export const makeField = (
 
             const {
                 value,
-                meta: { touched, active, validation: { valid, error } }
+                meta: { touched, active, validation, isValidating }
             } = state;
+
+            const error = isInvalidResult(validation)
+                ? validation.error
+                : undefined;
+
+            const valid = validation.valid;
 
             const pristine = value === formActions.getInitialValue(name);
 
@@ -230,7 +249,8 @@ export const makeField = (
                     error,
                     pristine,
                     touched,
-                    active
+                    active,
+                    isValidating
                 }
             });
         }

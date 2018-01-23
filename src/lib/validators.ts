@@ -1,104 +1,146 @@
 import { FieldValue } from "./index";
 
-export type Reporter = (error?: string) => ValidationFieldResult;
+export type Reporter = (error?: string) => FieldResult;
 
-export type ValidatorFn<T> = (x: T | undefined) => ValidationFieldResult;
+export type ValidatorFn<T> = (
+    x: T | undefined
+) => FieldResult | Promise<FieldResult>;
 
-export type ValidationFnWithReporters<T> = (
-    reporters: FormValidArgs
-) => ValidatorFn<T>;
+export type ValidationFnWithReporters<
+    T = FieldValue | undefined,
+    U = string
+> = (reporters: Reporters, formatter: Formatter<U>) => ValidatorFn<T>;
 
-export type ParamaterizedValidationFn<T> = (
+export type ParamaterizedValidationFn<T, U> = (
     ...params: any[]
-) => ValidationFnWithReporters<T>;
+) => ValidationFnWithReporters<T, U>;
 
-export type MakeValidator<T> = (
-    validationMap: Record<string, ValidationFnWithReporters<T>>
+export type MakeValidator<T, U> = (
+    validationMap: Record<string, ValidationFnWithReporters<T, U>>,
+    formatter?: Formatter<U>
 ) => Record<string, ValidatorFn<T>>;
 
-export interface FormValidArgs {
-    valid: () => ValidationFieldResult;
-    invalid: (a: string) => ValidationFieldResult;
+export interface Reporters {
+    valid: () => ValidFieldResult;
+    invalid: (a: string) => InvalidFieldResult;
 }
 
-export type FormValidator<T> = {
-    [key: string]: ValidationFnWithReporters<T>;
-};
+export type FormValidator<T, U> = Record<
+    string,
+    ValidationFnWithReporters<T, U>
+>;
 
-export interface ValidationFieldResult {
-    valid: boolean;
+export type ValidationResult = Record<string, FieldResult>;
+
+export type ValidationErrors = Record<string, InvalidFieldResult>;
+
+export interface InvalidFieldResult {
+    valid: false;
     error: string;
 }
 
-export interface ValidationResult {
-    [key: string]: ValidationFieldResult;
+export interface ValidFieldResult {
+    valid: true;
 }
+
+export type FieldResult = ValidFieldResult | InvalidFieldResult;
+
+export const isInvalidResult = (
+    result: FieldResult
+): result is InvalidFieldResult => {
+    return !result.valid;
+};
 
 /**
  * Passed to validation functions to be called when value is valid
  */
-export const validFn: Reporter = () => ({
-    valid: true,
-    error: ""
+export const validFn = (): ValidFieldResult => ({
+    valid: true
 });
 
 /**
  * Passed to validation functions to be called when value is invalid
  * @param error An error message - why is the value invalid?
  */
-export const invalidFn: Reporter = (error: string) => ({
+export const invalidFn = (error: string): InvalidFieldResult => ({
     valid: false,
     error
 });
+
+export type Formatter<T> = (x: T, params?: Record<string, any>) => string;
 
 /**
  * Passes the validation reporters to each entry in an object
  * @param validationMap Object of field validators { [ fieldName: string ]: ValidationFunction }
  */
-const create: MakeValidator<FieldValue> = validationMap =>
-    Object.entries(validationMap).reduce(
+const create = <T = FieldValue, U = string>(
+    validationMap: Record<string, ValidationFnWithReporters<T, U>>,
+    formatter: Formatter<U> = ((x: string) => x) as any
+) => {
+    return Object.entries(validationMap).reduce(
         (out, [key, value]) => ({
             ...out,
-            [key]: value({ valid: validFn, invalid: invalidFn })
+            [key]: value({ valid: validFn, invalid: invalidFn }, formatter)
         }),
         {}
     );
+};
 
-export interface NotUndefinedMessage {
-    undef?: () => string;
+export interface NotUndefinedMessage<T = string> {
+    undef?: () => T;
 }
 
-export interface AtLeastXCharsMessages extends NotUndefinedMessage {
-    short?: (val: string) => string;
+export interface AtLeastXCharsMessages<T = string>
+    extends NotUndefinedMessage<T> {
+    short?: (val: string) => T;
 }
 
-export interface AtMostXCharsMessages {
-    long: (val: string) => string;
+export interface AtMostXCharsMessages<T = string> {
+    long: (val: string) => T;
 }
 
-export interface NumericMessages extends NotUndefinedMessage {
-    nonNumeric?: (val: string) => string;
+export interface NumericMessages<T = string> extends NotUndefinedMessage<T> {
+    nonNumeric?: (val: string) => T;
 }
+
+export type ValidationFnCreator<T, U, V, W> = (
+    params: T,
+    msg?: U
+) => ValidationFnWithReporters<V, W>;
 
 /**
  * Validates that a value is at least {chars} long
  * @param chars Minimum number of characters
  * @param msg Error messages when invalid
  */
-const atLeastXChars = (
-    chars: number,
-    msg?: AtLeastXCharsMessages
-): ValidationFnWithReporters<string> => ({ valid, invalid }) => val => {
+const atLeastXChars = <T>(
+    params: { chars: number },
+    msg?: AtLeastXCharsMessages<T>
+) => ({ valid, invalid }: Reporters, formatter: Formatter<T>) => (
+    val: string
+) => {
     if (!val) {
-        return invalid(msg && msg.undef ? msg.undef() : `Please enter a value`);
+        return invalid(
+            formatter(
+                msg && msg.undef
+                    ? msg.undef()
+                    : (`Please enter a value` as any),
+                params
+            )
+        );
     }
 
-    return val.length >= chars
+    return val.length >= params.chars
         ? valid()
         : invalid(
-              msg && msg.short
-                  ? msg.short(val)
-                  : `Entry must be at least ${chars} characters long`
+              formatter(
+                  msg && msg.short
+                      ? msg.short(val)
+                      : (`Entry must be at least ${
+                            params.chars
+                        } characters long` as any),
+                  params
+              )
           );
 };
 
@@ -107,20 +149,27 @@ const atLeastXChars = (
  * @param chars Maximum number of characters
  * @param msg Error messages when invalid
  */
-const atMostXChars = (
-    chars: number,
-    msg?: AtMostXCharsMessages
-): ValidationFnWithReporters<string> => ({ valid, invalid }) => val => {
+const atMostXChars = <T>(
+    params: { chars: number },
+    msg: AtMostXCharsMessages<T>
+) => ({ valid, invalid }: Reporters, formatter: Formatter<T>) => (
+    val: string
+) => {
     if (!val) {
         return valid();
     }
 
-    return val.length <= chars
+    return val.length <= params.chars
         ? valid()
         : invalid(
-              msg && msg.long
-                  ? msg.long(val)
-                  : `Entry must be no more than ${chars} characters long`
+              formatter(
+                  msg && msg.long
+                      ? msg.long(val)
+                      : (`Entry must be no more than ${
+                            params.chars
+                        } characters long` as any),
+                  params
+              )
           );
 };
 
@@ -128,10 +177,10 @@ const atMostXChars = (
  * Validates that a value is only numbers
  * @param msg Error messages when invalid
  */
-const numeric = (msg?: NumericMessages): ValidationFnWithReporters<string> => ({
-    valid,
-    invalid
-}) => val => {
+const numeric = <T>(msg?: NumericMessages<T>) => (
+    { valid, invalid }: Reporters,
+    formatter: Formatter<T>
+) => (val: string) => {
     if (typeof val === "undefined") {
         return valid();
     }
@@ -139,9 +188,11 @@ const numeric = (msg?: NumericMessages): ValidationFnWithReporters<string> => ({
     return /^[0-9]*$/.test(val || "")
         ? valid()
         : invalid(
-              msg && msg.nonNumeric
-                  ? msg.nonNumeric(val)
-                  : `Entered value must be a number`
+              formatter(
+                  msg && msg.nonNumeric
+                      ? msg.nonNumeric(val)
+                      : (`Entered value must be a number` as any)
+              )
           );
 };
 
@@ -150,17 +201,19 @@ const numeric = (msg?: NumericMessages): ValidationFnWithReporters<string> => ({
  * @param validators Validators to combine
  * @param combiner How to combine error messages
  */
-const all = <T>(
-    validators: Array<ValidationFnWithReporters<T>>,
+const all = <T, U>(
+    validators: Array<ValidationFnWithReporters<T, U>>,
     combiner?: (errors: string[]) => string
-): ValidationFnWithReporters<T> => reporters => val => {
-    const results = validators.map(validator => validator(reporters)(val));
+): ValidationFnWithReporters<T, U> => (reporters, formatter) => async val => {
+    const results = await Promise.all(
+        validators.map(validator => validator(reporters, formatter)(val))
+    );
 
     if (results.every(r => r.valid)) {
         return reporters.valid();
     }
 
-    const errors = results.filter(r => !r.valid).map(r => r.error);
+    const errors = results.filter(isInvalidResult).map(r => r.error);
 
     return reporters.invalid(
         combiner ? combiner(errors) : errors.join(" and ")
