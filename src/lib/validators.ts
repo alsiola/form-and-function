@@ -113,7 +113,7 @@ export type ValidationFnCreator<T, U, V, W> = (
  * @param chars Minimum number of characters
  * @param msg Error messages when invalid
  */
-const atLeastXChars = <T>(
+const atLeast = <T>(
     params: { chars: number },
     msg?: AtLeastXCharsMessages<T>
 ) => ({ valid, invalid }: Reporters, formatter: Formatter<T>) => (
@@ -149,12 +149,10 @@ const atLeastXChars = <T>(
  * @param chars Maximum number of characters
  * @param msg Error messages when invalid
  */
-const atMostXChars = <T>(
-    params: { chars: number },
-    msg: AtMostXCharsMessages<T>
-) => ({ valid, invalid }: Reporters, formatter: Formatter<T>) => (
-    val: string
-) => {
+const atMost = <T>(params: { chars: number }, msg: AtMostXCharsMessages<T>) => (
+    { valid, invalid }: Reporters,
+    formatter: Formatter<T>
+) => (val: string) => {
     if (!val) {
         return valid();
     }
@@ -221,8 +219,8 @@ const all = <T, U>(
 };
 
 export const validation = {
-    atLeastXChars,
-    atMostXChars,
+    atLeast,
+    atMost,
     all,
     create,
     numeric

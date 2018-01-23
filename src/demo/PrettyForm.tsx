@@ -12,6 +12,8 @@ export interface PrettyField {
 export interface PrettyFormProps {
     fields: PrettyField[];
     title: string;
+    submitLabel?: string;
+    resetLabel?: string;
 }
 
 export const PrettyForm: React.SFC<
@@ -20,7 +22,7 @@ export const PrettyForm: React.SFC<
     form,
     meta: { valid, errors, submitted },
     actions: { reset },
-    ownProps: { fields, title },
+    ownProps: { fields, title, submitLabel = "Submit", resetLabel = "Reset" },
     Field
 }) => (
     <Form {...form} size="huge" error={true}>
@@ -38,9 +40,9 @@ export const PrettyForm: React.SFC<
                 }}
             />
         ))}
-        <Button type="submit">Submit</Button>
+        <Button type="submit">{submitLabel}</Button>
         <Button type="button" onClick={reset}>
-            Reset
+            {resetLabel}
         </Button>
         <Message error={true} hidden={!submitted || valid}>
             <Message.Header>You done made a boo boo.</Message.Header>
