@@ -145,12 +145,14 @@ It's much easier to see it in some code, so if our form has fields named `firstN
 and we want to validate `firstName`, we would use:
 
 ```js
-import { Form, validation }
+import { Form, validation } from "form-and-function";
+
 <Form
     validators={validation.create({
-        firstName: ({ valid, invalid }) => value => value.length < 3 ? valid() : invalid(`Must be more than 3 chars.`)
+        firstName: ({ valid, invalid }) => value =>
+            value.length < 3 ? valid() : invalid(`Must be more than 3 chars.`)
     })}
-/>
+/>;
 ```
 
 If this looks long-winded then say hello to some built in validators! Currently we provide the following:
@@ -164,7 +166,6 @@ They can be used as follows:
 #### numeric
 
 ```js
-import { Form, validation }
 <Form
     validators={validation.create({
         age: validation.numeric()
@@ -175,7 +176,6 @@ import { Form, validation }
 #### atLeast/atMost
 
 ```js
-import { Form, validation }
 <Form
     validators={validation.create({
         firstName: validation.atLeast({ chars: 3 })
@@ -190,15 +190,18 @@ argument to `numeric`, or the second argument to `atLeast`/`atMost`. All message
 passed the invalid value as an argument.
 
 ```js
-import { Form, validation }
 <Form
     validators={validation.create({
-        firstName: validation.atLeast({ chars: 3 }, {
-            short: () => "Please enter 3 characters minimum",
-            undef: () => "You must enter a message"
-        }),
+        firstName: validation.atLeast(
+            { chars: 3 },
+            {
+                short: () => "Please enter 3 characters minimum",
+                undef: () => "You must enter a message"
+            }
+        ),
         age: validation.numeric({
-            nonNumeric: enteredValue => `Please enter a number - you entered ${enteredValue}`
+            nonNumeric: enteredValue =>
+                `Please enter a number - you entered ${enteredValue}`
         })
     })}
 />
@@ -211,14 +214,16 @@ check if a field is numeric AND more than 5 characters. This is achieved with `v
 an array of validators.
 
 ```js
-import { Form, validation }
 <Form
     validators={validation.all({
         longNumber: validation.combine([
-            validation.atLeast({ chars: 3 }, {
-                short: () => "Please enter 3 characters minimum",
-                undef: () => "You must enter a message"
-            }),
+            validation.atLeast(
+                { chars: 3 },
+                {
+                    short: () => "Please enter 3 characters minimum",
+                    undef: () => "You must enter a message"
+                }
+            ),
             validation.numeric({
                 nonNumeric: () => `Please enter a number`
             })
@@ -235,7 +240,6 @@ Not quite perfect. We can pass a second argument to `validation.all`, which is a
 an array of strings, and should return a string.
 
 ```js
-import { Form, validation }
 <Form
     validators={validation.all({
         longNumber: validation.combine([
