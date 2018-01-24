@@ -236,12 +236,13 @@ an array of validators.
             validation.atLeast(
                 { chars: 3 },
                 {
-                    short: () => "Please enter 3 characters minimum",
-                    undef: () => "You must enter a message"
+                    short: ({ chars }) =>
+                        `Please enter ${chars} characters minimum`,
+                    undef: "You must enter a message"
                 }
             ),
             validation.numeric({
-                nonNumeric: () => `Please enter a number`
+                nonNumeric: "Please enter a number"
             })
         ])
     })}
@@ -260,11 +261,11 @@ an array of strings, and should return a string.
     validators={validation.all({
         longNumber: validation.combine([
             validation.atLeast({ chars: 3 }, {
-                short: () => "3 characters minimum",
-                undef: () => "provided"
+                short: ({ chars }) => `${chars} characters minimum`,
+                undef: "provided"
             }),
             validation.numeric({
-                nonNumeric: () => `numbers only`
+                nonNumeric: "numbers only"
             })
         ], errors => "Please enter " + errors.join(", and also ")
     })}
@@ -323,15 +324,29 @@ const messages = {
             firstName: validation.atLeast(
                 { chars: 3 },
                 {
-                    short: () => messages.short,
-                    undef: () => messages.undef
+                    short: messages.short,
+                    undef: messages.undef
                 }
             ),
             age: validation.numeric({
-                nonNumeric: () => messages.nonNumeric
+                nonNumeric: messages.nonNumeric
             })
         },
         this.props.intl.formatMessage
     )}
 />;
+```
+
+If, as above, we name our messages using the same keys as the form validation messages, then we can just pass in the whole messages object and save some typing:
+
+```js
+<Form
+    validators={validation.create(
+        {
+            firstName: validation.atLeast({ chars: 3 }, messages),
+            age: validation.numeric(messages)
+        },
+        this.props.intl.formatMessage
+    )}
+/>
 ```
