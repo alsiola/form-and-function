@@ -1,69 +1,48 @@
 import * as React from "react";
-import { Form, validation } from "../lib";
-import { PrettyForm } from "./PrettyForm";
 import { Segment } from "semantic-ui-react";
+import { IntlProvider, addLocaleData } from "react-intl";
+import * as en from "react-intl/locale-data/en";
+import * as fr from "react-intl/locale-data/fr";
+import { translations } from "./translations";
 
-const fields = [
-    {
-        name: "field1",
-        label: "Field 1",
-        hint: "The first field"
-    },
-    {
-        name: "field2",
-        label: "Field 2",
-        hint: "The second field"
-    }
-];
+import { BasicForm } from "./forms/Basic";
+import { ValidatedForm } from "./forms/Validated";
+import { AsyncForm } from "./forms/Async";
+import { IntlForm } from "./forms/Intl";
 
-const validators = validation.create({
-    field1: validation.all(
-        [
-            validation.atLeastXChars(3, {
-                short: () => `at least 3 characters long`,
-                undef: () => "provided"
-            }),
-            validation.atMostXChars(7, {
-                long: () => `at most 7 characters long`
-            }),
-            validation.numeric({
-                nonNumeric: () => `numeric only`
-            })
-        ],
-        errors => `Entry must be ${errors.join(" and ")}.`
-    ),
-    field2: validation.atLeastXChars(5)
-});
+addLocaleData([...en, ...fr]);
 
-const initialValues = {
-    field1: "123",
-    field2: "hello"
-};
+export class App extends React.Component<{}, { locale: string }> {
+    state = {
+        locale: "en"
+    };
 
-class App extends React.Component {
-    handleSubmit = (values: object) => console.log("submitted", values);
-
-    handleFailedSubmit = (values: object) =>
-        console.log("failed submit", values);
+    changeLocale = (locale: string) => () => this.setState({ locale });
 
     render() {
         return (
-            <Segment padded="very">
-                <Form
-                    name="test"
-                    validators={validators}
-                    initialValues={initialValues}
-                    onSubmit={this.handleSubmit}
-                    onSubmitFailed={this.handleFailedSubmit}
-                    render={PrettyForm}
-                    renderProps={{
-                        fields,
-                        title: "A Form!"
-                    }}
-                />
-            </Segment>
+            <IntlProvider
+                locale={this.state.locale}
+                messages={translations[this.state.locale]}
+            >
+                <div>
+                    <Segment padded="very">
+                        <BasicForm />
+                    </Segment>
+
+                    <Segment padded="very">
+                        <ValidatedForm />
+                    </Segment>
+
+                    <Segment padded="very">
+                        <AsyncForm />
+                    </Segment>
+
+                    <Segment padded="very">
+                        <IntlForm changeLocale={this.changeLocale} />
+                    </Segment>
+                </div>
+            </IntlProvider>
         );
     }
 }
-
-export default App;

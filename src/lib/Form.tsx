@@ -1,12 +1,14 @@
 import * as React from "react";
+import { SyntheticEvent } from "react";
+
 import { componentStateEngine, StateEngine } from "./stateEngine";
 import { FieldProps, FieldRecord, makeField } from "./Field";
-import { SyntheticEvent } from "react";
 import {
     validFn,
+    FieldResult,
+    isInvalidResult,
     ValidatorFn,
-    ValidationResult,
-    ValidationFieldResult
+    ValidationErrors
 } from "./validators";
 
 export type FieldValue = string | boolean | number;
@@ -17,12 +19,17 @@ export type FieldMap = Record<string, FieldRecord>;
 export type EventHandler = (values: FieldMap) => void;
 export type MaybeEventHandler = EventHandler | undefined;
 
+/**
+ * Props supplied to the render component passed to Form
+ * TOwnProps is the type of the Form render components own props
+ * TFieldOwnProps is the type of the Field render components own props
+ */
 export interface InjectedFormProps<
     TOwnProps extends object | void = void,
     TFieldOwnProps extends object | void = void
 > {
-    Field: React.SFC<FieldProps<TFieldOwnProps>>;
-    input: React.DetailedHTMLProps<
+    Field: React.StatelessComponent<FieldProps<TFieldOwnProps>>;
+    form: React.DetailedHTMLProps<
         React.FormHTMLAttributes<HTMLFormElement>,
         HTMLFormElement
     >;
@@ -30,7 +37,8 @@ export interface InjectedFormProps<
     meta: {
         valid: boolean;
         submitted: boolean;
-        errors: ValidationResult;
+        errors: ValidationErrors;
+        isValidating: boolean;
     };
     actions: {
         reset: () => void;
@@ -39,6 +47,9 @@ export interface InjectedFormProps<
     ownProps: TOwnProps;
 }
 
+/**
+ * Props that can be passed to Form
+ */
 export interface FormProps<T extends object | void, U extends object | void> {
     name: string;
     render: React.SFC<InjectedFormProps<T, U>>;
@@ -48,6 +59,7 @@ export interface FormProps<T extends object | void, U extends object | void> {
     onSubmitFailed?: EventHandler;
     onChange?: EventHandler;
     renderProps?: T;
+    stateEngine?: StateEngine<FormState>;
 }
 
 export interface FormState {
@@ -59,87 +71,115 @@ export class Form<
     T extends object | void,
     U extends object | void
 > extends React.Component<FormProps<T, U>, FormState> {
-    private Field: React.SFC<FieldProps<U>>;
+    static defaultProps: Partial<FormProps<any, any>> = {
+        initialValues: {},
+        onSubmit: () => {},
+        onSubmitFailed: () => {},
+        onChange: () => {},
+        renderProps: {}
+    };
+
+    private Field: React.StatelessComponent<FieldProps<U>>;
     private stateEngine: StateEngine<FormState>;
 
+    /**
+     * When a Form is instantiated, generate a state engine with initial empty
+     * state - this will be filled in by Fields, and create the Field component
+     * that will be injected.
+     */
     constructor(props: FormProps<T, U>) {
         super(props);
-        const initialState = this.getInitialState(props.initialValues);
-        this.stateEngine = componentStateEngine(this, initialState);
+        this.stateEngine =
+            props.stateEngine ||
+            componentStateEngine(this, {
+                fields: {},
+                submitted: false
+            });
         this.makeField();
     }
 
-    private getInitialState = (initialValues?: FieldValueMap): FormState => {
-        const fields = initialValues
-            ? Object.keys(initialValues).reduce(
-                  (out, key) => ({
-                      ...out,
-                      [key]: {
-                          value: initialValues[key],
-                          meta: {
-                              touched: false,
-                              active: false,
-                              validation: {
-                                  valid: true,
-                                  error: ""
-                              }
-                          }
-                      }
-                  }),
-                  {} as FormState
-              )
-            : {};
-        return {
-            fields,
-            submitted: false
-        };
-    };
+    componentWillReceiveProps(nextProps: FormProps<T, U>) {
+        if (nextProps.validators !== this.props.validators) {
+            this.makeField(false);
+        }
+        return true;
+    }
 
-    private makeField = () => {
+    /**
+     * Generates the Field that will be passed in InjectedFormProps
+     */
+    private makeField = (resetField = true) => {
         this.Field = makeField(
             {
                 onChange: this.handleFieldChange,
                 validate: this.validate,
                 getInitialValue: this.getInitialValue
             },
-            this.stateEngine
-        ) as React.SFC<FieldProps<U>>;
+            this.stateEngine,
+            resetField
+        ) as any;
     };
 
+    /**
+     * Reset everything to initial values
+     * State will be fleshed out by Field children when they are recreated
+     */
     private reset = () => {
         this.stateEngine
-            .set(this.getInitialState(this.props.initialValues))
-            .then(this.makeField)
+            .set({
+                fields: {},
+                submitted: false
+            })
+            .then(() => this.makeField())
             .then(() => this.forceUpdate());
     };
 
+    /**
+     * Allows Fields to get to their initial state
+     */
     private getInitialValue = (name: string) =>
-        (this.props.initialValues || {})[name] || "";
+        (this.props.initialValues as FieldValueMap)[name] || "";
 
+    /**
+     * Is every field passing validation
+     */
     private allValid = (validationResult: FieldMap): boolean => {
         return Object.values(validationResult).every(
             r => r.meta.validation.valid
         );
     };
 
+    /**
+     * If there is a validator for field with name of {name}
+     * then run it, otherwise return valid
+     */
     private validate = async (
         name: string,
         value: FieldValue
-    ): Promise<ValidationFieldResult> => {
+    ): Promise<FieldResult> => {
         if (!this.props.validators) {
             return validFn();
         }
 
-        return this.props.validators[name]
-            ? this.props.validators[name](value)
-            : validFn();
+        const validator = this.props.validators[name];
+
+        return validator ? validator(value) : validFn();
     };
 
+    /**
+     * Called by Fields when their value changes
+     * If a form onChange handler was passed as a prop, call it
+     */
     private handleFieldChange = () => {
-        this.props.onChange &&
-            this.props.onChange(this.stateEngine.select(s => s.fields));
+        (this.props.onChange as EventHandler)(
+            this.stateEngine.select(s => s.fields)
+        );
     };
 
+    /**
+     * On submit call either props.onSubmit or props.onFailedSubmit
+     * depending on current validation status
+     */
     private handleSubmit = (
         onSubmit: MaybeEventHandler,
         onFailedSubmit: MaybeEventHandler,
@@ -148,9 +188,9 @@ export class Form<
     ) => (e?: SyntheticEvent<any>) => {
         e && e.preventDefault();
         this.stateEngine.set({ submitted: true });
-        onSubmit && valid
-            ? onSubmit(fields)
-            : onFailedSubmit && onFailedSubmit(fields);
+        valid
+            ? (onSubmit as EventHandler)(fields)
+            : (onFailedSubmit as EventHandler)(fields);
     };
 
     render() {
@@ -164,21 +204,32 @@ export class Form<
 
         const { submitted, fields } = this.stateEngine.get();
 
-        const validationResult = Object.entries(fields).reduce(
-            (out, [key, value]) =>
-                Object.assign(
-                    {},
-                    out,
-                    value.meta.validation.error
-                        ? {
-                              [key]: value.meta.validation
-                          }
-                        : {}
-                ),
-            {} as ValidationResult
-        );
-
         const valid = this.allValid(fields);
+
+        /**
+         * Filters out all keys from validationResult where valid is true,
+         * if form is valid then we know this will be an empty object, so we can
+         * just return that
+         */
+        const validationResult = valid
+            ? {}
+            : Object.entries(fields).reduce(
+                  (out, [key, value]) =>
+                      Object.assign(
+                          {},
+                          out,
+                          isInvalidResult(value.meta.validation)
+                              ? {
+                                    [key]: value.meta.validation
+                                }
+                              : {}
+                      ),
+                  {} as ValidationErrors
+              );
+
+        const isValidating = Object.values(fields).some(
+            field => field.meta.isValidating
+        );
 
         const submit = this.handleSubmit(
             onSubmit,
@@ -188,11 +239,12 @@ export class Form<
         );
 
         return render({
-            ownProps: renderProps || ({} as T),
+            ownProps: renderProps as T,
             meta: {
                 valid,
                 submitted,
-                errors: validationResult
+                errors: validationResult,
+                isValidating
             },
             Field: this.Field,
             values: fields,
@@ -200,7 +252,7 @@ export class Form<
                 reset: this.reset,
                 submit
             },
-            input: {
+            form: {
                 name,
                 onSubmit: submit
             }

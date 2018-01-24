@@ -10,7 +10,7 @@ export interface PrettyFieldProps {
 
 export const PrettyField: React.SFC<InjectedFieldProps<PrettyFieldProps>> = ({
     input,
-    meta: { valid, pristine, touched, active, error },
+    meta: { valid, pristine, touched, active, error, isValidating },
     ownProps: { submitted, label, hint }
 }) => (
     <Form.Field>
@@ -19,13 +19,19 @@ export const PrettyField: React.SFC<InjectedFieldProps<PrettyFieldProps>> = ({
             focus={active}
             error={!valid}
             icon={
-                !valid &&
-                (touched || active || submitted) && <Icon name="alarm" />
+                isValidating ? (
+                    <Icon loading={true} name="sun" />
+                ) : (
+                    (touched || active || submitted) &&
+                    (valid ? (
+                        <Icon name="checkmark" />
+                    ) : (
+                        <Icon name="warning circle" />
+                    ))
+                )
             }
             label={label}
         />
-        <Label pointing={true}>
-            {!valid && active && error ? error : hint}
-        </Label>
+        {!valid && active && error && <Label pointing={true}>{error}</Label>}
     </Form.Field>
 );

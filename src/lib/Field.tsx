@@ -2,16 +2,22 @@ import * as React from "react";
 import { EventHandler, SyntheticEvent } from "react";
 import { FormState } from "./Form";
 import { StateEngine } from "./stateEngine";
-import { ValidationFieldResult } from "./validators";
-import { FieldValue } from "./index";
+import { FieldResult, isInvalidResult } from "./validators";
+import { FieldValue } from "./Form";
 
+/**
+ * These props are provided to the component provided as renderer
+ * to the Field component.  T is the type of the render components
+ * own props, that will be provided via Fields renderProps prop
+ */
 export interface InjectedFieldProps<T extends object | void> {
     meta: {
         valid: boolean;
-        error: string;
+        error?: string;
         pristine: boolean;
         touched: boolean;
         active: boolean;
+        isValidating: boolean;
     };
     input: {
         onChange: EventHandler<SyntheticEvent<HTMLInputElement>>;
@@ -22,25 +28,26 @@ export interface InjectedFieldProps<T extends object | void> {
     ownProps: T;
 }
 
+/**
+ * Field meta values provided by form-and-function
+ */
 export interface FieldMeta {
     touched: boolean;
     active: boolean;
-    validation: ValidationFieldResult;
+    validation: FieldResult;
+    isValidating: boolean;
 }
 
-export interface FormActions {
-    onChange: () => void;
-    validate: (
-        name: string,
-        x: FieldValue | undefined
-    ) => Promise<ValidationFieldResult>;
-    getInitialValue: (name: string) => FieldValue | undefined;
-}
-
+/**
+ * Props passed to the injected Field component when it is used
+ */
 export interface FieldProps<T extends object | void = void> {
     name: string;
     renderProps?: T;
     render: React.SFC<InjectedFieldProps<T>>;
+    onChange?: EventHandler<SyntheticEvent<HTMLInputElement>>;
+    onFocus?: EventHandler<SyntheticEvent<HTMLInputElement>>;
+    onBlur?: EventHandler<SyntheticEvent<HTMLInputElement>>;
 }
 
 export interface FieldRecordAny<T = FieldMeta | Partial<FieldMeta>> {
@@ -51,37 +58,70 @@ export interface FieldRecordAny<T = FieldMeta | Partial<FieldMeta>> {
 export type FieldRecord = FieldRecordAny<FieldMeta>;
 export type FieldRecordUpdate = FieldRecordAny<Partial<FieldMeta>>;
 
+/**
+ * This is provided by the Form component when it calls makeField to
+ * allow the Field to retrieve state from Form, and to indicate when
+ * its value has changed
+ */
+export interface FormActions {
+    onChange: () => void;
+    validate: (name: string, x: FieldValue | undefined) => Promise<FieldResult>;
+    getInitialValue: (name: string) => FieldValue | undefined;
+}
+
+/**
+ * formActions allow the field to trigger functions within the parent
+ * stateEngine allows the field to update and retrieve values from its parents state
+ */
 export const makeField = (
     formActions: FormActions,
-    stateEngine: StateEngine<FormState>
-): React.SFC<FieldProps> =>
-    class Field<T extends object> extends React.Component<
-        FieldProps<T>,
-        FieldMeta
-    > {
+    stateEngine: StateEngine<FormState>,
+    resetState = true
+) =>
+    class Field<T extends object> extends React.Component<FieldProps<T>, void> {
+        static defaultProps: Partial<FieldProps<any>> = {
+            renderProps: {}
+        };
+
+        /**
+         * When Field is instantiated we need to set up its state
+         * record in the parent Form
+         */
         constructor(props: FieldProps<T>) {
             super(props);
             const initialValue = formActions.getInitialValue(props.name);
 
+            // Setup initial state with validation as true
+            resetState &&
+                this.updateState({
+                    meta: {
+                        touched: false,
+                        active: false,
+                        validation: {
+                            valid: true
+                        },
+                        isValidating: false
+                    },
+                    value: initialValue
+                });
+
+            // Run validation on initialValue and update
             formActions
                 .validate(props.name, formActions.getInitialValue(props.name))
                 .then(validation => {
-                    stateEngine.set(state => ({
-                        fields: {
-                            ...state.fields,
-                            [props.name]: {
-                                meta: {
-                                    touched: false,
-                                    active: false,
-                                    validation
-                                },
-                                value: initialValue
-                            }
+                    this.updateState({
+                        meta: {
+                            validation
                         }
-                    }));
+                    });
                 });
         }
 
+        /**
+         * Take a partial update to the fields state (stored in Form) and
+         * convert it into an update that can be applied to the Form state
+         * without losing other field's state
+         */
         updateState = (
             fieldState: Partial<FieldRecordUpdate>
         ): Promise<void> => {
@@ -102,7 +142,12 @@ export const makeField = (
                             validation:
                                 fieldState.meta && fieldState.meta.validation
                                     ? fieldState.meta.validation
-                                    : state.fields[name].meta.validation
+                                    : state.fields[name].meta.validation,
+                            isValidating:
+                                fieldState.meta &&
+                                "isValidating" in fieldState.meta
+                                    ? (fieldState.meta.isValidating as boolean)
+                                    : state.fields[name].meta.isValidating
                         },
                         value:
                             "value" in fieldState
@@ -128,44 +173,73 @@ export const makeField = (
                 }
             });
 
+        /**
+         * When the field changes we need to update the value in the parent Form
+         * and rerun validation. As validation can be async then Promise.all
+         * ensures that we immediately update the value even if validtion takes
+         * some time. Returned promise is not currently used.
+         */
         handleChange = (e: SyntheticEvent<any>) => {
-            const newValue = e.currentTarget.value;
-            Promise.all([
+            // Pulled into a variable so we don't lose this when the event is disposed
+            const { value } = e.currentTarget;
+            const { onChange, onBlur, onFocus } = this.props;
+
+            onChange && onChange(e);
+            onBlur && onBlur(e);
+            onFocus && onFocus(e);
+
+            return Promise.all([
                 this.updateState({
-                    value: newValue
+                    value
                 }).then(formActions.onChange),
-                formActions
-                    .validate(this.props.name, newValue)
-                    .then(validation =>
-                        this.updateState({
-                            meta: {
-                                validation
-                            }
-                        })
-                    )
+                this.updateState({
+                    meta: {
+                        isValidating: true
+                    }
+                }).then(() =>
+                    formActions
+                        .validate(this.props.name, value)
+                        .then(validation =>
+                            this.updateState({
+                                meta: {
+                                    validation,
+                                    isValidating: false
+                                }
+                            })
+                        )
+                )
             ]);
         };
 
         render() {
-            const fieldState = stateEngine.select(
-                s => s.fields[this.props.name]
-            );
+            const { name, render, renderProps } = this.props;
 
-            if (!fieldState) {
+            const state = stateEngine.select(s => s.fields[name]);
+
+            /**
+             * If field does not have an initialValue, then it won't have a record
+             * added to form state until the constructor async setters have run, so
+             * we return null until the Form's record for this field is available
+             */
+            if (!state) {
                 return null;
             }
 
-            const { name, render, renderProps } = this.props;
+            const {
+                value,
+                meta: { touched, active, validation, isValidating }
+            } = state;
 
-            const { value, meta: { touched, active, validation } } = fieldState;
+            const error = isInvalidResult(validation)
+                ? validation.error
+                : undefined;
 
-            const isValid = validation ? validation.valid : true;
-            const isError = validation ? validation.error : "";
+            const valid = validation.valid;
 
             const pristine = value === formActions.getInitialValue(name);
 
             return render({
-                ownProps: renderProps || ({} as T),
+                ownProps: renderProps as T,
                 input: {
                     onChange: this.handleChange,
                     onFocus: this.handleFocus,
@@ -173,12 +247,13 @@ export const makeField = (
                     value
                 },
                 meta: {
-                    valid: isValid,
-                    error: isError,
+                    valid,
+                    error,
                     pristine,
                     touched,
-                    active
+                    active,
+                    isValidating
                 }
             });
         }
-    } as any;
+    };

@@ -1,13 +1,13 @@
 {
     "compilerOptions": {
-        "outDir": "./dist/es",
+        "outDir": "../../dist/modules",
         "module": "es2015",
         "target": "es5",
         "lib": ["es2017", "dom"],
         "sourceMap": true,
         "jsx": "react",
         "moduleResolution": "node",
-        "rootDir": "src",
+        "rootDir": ".",
         "forceConsistentCasingInFileNames": true,
         "noImplicitReturns": true,
         "noImplicitThis": true,
@@ -24,6 +24,8 @@
         "acceptance-tests",
         "webpack",
         "jest",
-        "src/setupTests.ts"
+        "src/setupTests.ts",
+        "src/demo",
+        "src/index.tsx"
     ]
 }
