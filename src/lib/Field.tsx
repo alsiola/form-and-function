@@ -158,20 +158,30 @@ export const makeField = (
             }));
         };
 
-        handleFocus = () =>
+        handleFocus = (e: SyntheticEvent<any>) => {
+            const { onFocus } = this.props;
+
+            onFocus && onFocus(e);
+
             this.updateState({
                 meta: {
                     touched: true,
                     active: true
                 }
             });
+        };
 
-        handleBlur = () =>
+        handleBlur = (e: SyntheticEvent<any>) => {
+            const { onBlur } = this.props;
+
+            onBlur && onBlur(e);
+
             this.updateState({
                 meta: {
                     active: false
                 }
             });
+        };
 
         /**
          * When the field changes we need to update the value in the parent Form
@@ -182,11 +192,9 @@ export const makeField = (
         handleChange = (e: SyntheticEvent<any>) => {
             // Pulled into a variable so we don't lose this when the event is disposed
             const { value } = e.currentTarget;
-            const { onChange, onBlur, onFocus } = this.props;
+            const { onChange } = this.props;
 
             onChange && onChange(e);
-            onBlur && onBlur(e);
-            onFocus && onFocus(e);
 
             return Promise.all([
                 this.updateState({
