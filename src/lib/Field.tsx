@@ -63,7 +63,7 @@ export type FieldRecordUpdate = FieldRecordAny<Partial<FieldMeta>>;
  * allow the Field to retrieve state from Form, and to indicate when
  * its value has changed
  */
-interface FormActions {
+export interface FormActions {
     onChange: () => void;
     validate: (name: string, x: FieldValue | undefined) => Promise<FieldResult>;
     getInitialValue: (name: string) => FieldValue | undefined;

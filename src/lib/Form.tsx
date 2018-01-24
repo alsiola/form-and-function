@@ -1,7 +1,8 @@
 import * as React from "react";
+import { SyntheticEvent } from "react";
+
 import { componentStateEngine, StateEngine } from "./stateEngine";
 import { FieldProps, FieldRecord, makeField } from "./Field";
-import { SyntheticEvent } from "react";
 import {
     validFn,
     FieldResult,

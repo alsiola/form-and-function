@@ -1,6 +1,10 @@
 {
     "name": "form-and-function",
-    "version": "0.1.0",
+    "version": "0.0.2",
+    "main": "dist/form-and-function.cjs.js",
+    "module": "dist/form-and-function.esm.js",
+    "browser": "dist/form-and-function.umd.js",
+    "types": "dist/modules/index.d.ts",
     "dependencies": {},
     "peerDependencies": {
         "react": "^15",
@@ -18,13 +22,22 @@
         "react-dom": "^16.2.0",
         "react-intl": "^2.4.0",
         "react-scripts-ts": "2.12.0",
+        "rimraf": "^2.6.2",
+        "rollup": "^0.55.0",
+        "rollup-plugin-typescript": "^0.8.1",
         "semantic-ui-css": "^2.2.12",
-        "semantic-ui-react": "^0.77.2"
+        "semantic-ui-react": "^0.77.2",
+        "typescript": "^2.8.2"
     },
     "scripts": {
+        "build": "rimraf dist && yarn build-ts && yarn build-rollup",
+        "build-rollup": "rollup -c",
+        "build-ts": "tsc -p src/lib/tsconfig.build.json",
         "start": "react-scripts-ts start",
-        "build": "react-scripts-ts build",
+        "build-demo": "react-scripts-ts build",
         "test": "react-scripts-ts test --env=jsdom",
-        "eject": "react-scripts-ts eject"
+        "eject": "react-scripts-ts eject",
+        "remove-rollup-ts":
+            "rimraf node_modules/rollup-plugin-typescript/node_modules/typescript"
     }
 }
