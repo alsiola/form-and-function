@@ -121,6 +121,7 @@ export const makeField = (
          * Take a partial update to the fields state (stored in Form) and
          * convert it into an update that can be applied to the Form state
          * without losing other field's state
+         * This is to simplify the other updaters
          */
         updateState = (
             fieldState: Partial<FieldRecordUpdate>
@@ -158,6 +159,9 @@ export const makeField = (
             }));
         };
 
+        /**
+         * Calls props.onFocus as we have not passed this to input
+         */
         handleFocus = (e: SyntheticEvent<any>) => {
             const { onFocus } = this.props;
 
