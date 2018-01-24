@@ -75,7 +75,8 @@ interface FormActions {
  */
 export const makeField = (
     formActions: FormActions,
-    stateEngine: StateEngine<FormState>
+    stateEngine: StateEngine<FormState>,
+    resetState = true
 ) =>
     class Field<T extends object> extends React.Component<FieldProps<T>, void> {
         static defaultProps: Partial<FieldProps<any>> = {
@@ -91,17 +92,18 @@ export const makeField = (
             const initialValue = formActions.getInitialValue(props.name);
 
             // Setup initial state with validation as true
-            this.updateState({
-                meta: {
-                    touched: false,
-                    active: false,
-                    validation: {
-                        valid: true
+            resetState &&
+                this.updateState({
+                    meta: {
+                        touched: false,
+                        active: false,
+                        validation: {
+                            valid: true
+                        },
+                        isValidating: false
                     },
-                    isValidating: false
-                },
-                value: initialValue
-            });
+                    value: initialValue
+                });
 
             // Run validation on initialValue and update
             formActions

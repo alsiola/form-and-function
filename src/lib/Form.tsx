@@ -97,17 +97,25 @@ export class Form<
         this.makeField();
     }
 
+    componentWillReceiveProps(nextProps: FormProps<T, U>) {
+        if (nextProps.validators !== this.props.validators) {
+            this.makeField(false);
+        }
+        return true;
+    }
+
     /**
      * Generates the Field that will be passed in InjectedFormProps
      */
-    private makeField = () => {
+    private makeField = (resetField = true) => {
         this.Field = makeField(
             {
                 onChange: this.handleFieldChange,
                 validate: this.validate,
                 getInitialValue: this.getInitialValue
             },
-            this.stateEngine
+            this.stateEngine,
+            resetField
         ) as any;
     };
 
@@ -121,7 +129,7 @@ export class Form<
                 fields: {},
                 submitted: false
             })
-            .then(this.makeField)
+            .then(() => this.makeField())
             .then(() => this.forceUpdate());
     };
 
