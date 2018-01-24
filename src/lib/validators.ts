@@ -8,16 +8,17 @@ export type ValidatorFn<T> = (
 
 export type ValidationFnWithReporters<
     T = FieldValue | undefined,
-    U = string
-> = (reporters: Reporters, formatter: Formatter<U>) => ValidatorFn<T>;
+    U = any,
+    V = any
+> = (reporters: Reporters, formatter: Formatter<U, V>) => ValidatorFn<T>;
 
 export type ParamaterizedValidationFn<T, U> = (
     ...params: any[]
 ) => ValidationFnWithReporters<T, U>;
 
-export type MakeValidator<T, U> = (
+export type MakeValidator<T, U, V = void> = (
     validationMap: Record<string, ValidationFnWithReporters<T, U>>,
-    formatter?: Formatter<U>
+    formatter?: Formatter<U, V>
 ) => Record<string, ValidatorFn<T>>;
 
 export interface Reporters {
@@ -67,7 +68,7 @@ export const invalidFn = (error: string): InvalidFieldResult => ({
     error
 });
 
-export type Formatter<T> = (x: T, params?: Record<string, any>) => string;
+export type Formatter<T, U> = (x: T, params?: U) => string;
 
 /**
  * Passes the validation reporters to each entry in an object
@@ -75,7 +76,8 @@ export type Formatter<T> = (x: T, params?: Record<string, any>) => string;
  */
 const create = <T = FieldValue, U = string>(
     validationMap: Record<string, ValidationFnWithReporters<T, U>>,
-    formatter: Formatter<U> = ((x: string) => x) as any
+    formatter: Formatter<U, MessageParams<FieldValue, any>> = ((x: string) =>
+        x) as any
 ) => {
     return Object.entries(validationMap).reduce(
         (out, [key, value]) => ({
@@ -86,27 +88,56 @@ const create = <T = FieldValue, U = string>(
     );
 };
 
-export interface NotUndefinedMessage<T = string> {
-    undef?: () => T;
+export type MessageParams<T, U = FieldValue> = T & {
+    value: U;
+};
+
+// T is result type
+// U is value type
+// V is params type
+export type Message<T, U, V> = T | ((a: MessageParams<U, V>) => T) | undefined;
+
+export interface NotUndefinedMessage<T = string, U = string> {
+    undef?: Message<T, void, U>;
 }
 
-export interface AtLeastXCharsMessages<T = string>
-    extends NotUndefinedMessage<T> {
-    short?: (val: string) => T;
+export interface AtLeastXCharsMessages<T = string, U = string>
+    extends NotUndefinedMessage<T, U> {
+    short?: Message<T, { chars: number }, U>;
 }
 
-export interface AtMostXCharsMessages<T = string> {
-    long: (val: string) => T;
+export interface AtMostXCharsMessages<T = string, U = string> {
+    long: Message<T, { chars: number }, U>;
 }
 
-export interface NumericMessages<T = string> extends NotUndefinedMessage<T> {
-    nonNumeric?: (val: string) => T;
+export interface NumericMessages<T = string, U = string>
+    extends NotUndefinedMessage<T, U> {
+    nonNumeric?: Message<T, void, U>;
 }
 
 export type ValidationFnCreator<T, U, V, W> = (
     params: T,
     msg?: U
 ) => ValidationFnWithReporters<V, W>;
+
+// S value type
+// T formatter input type
+// U params type
+// V message name
+const useFormatter = <S, T, U, V extends string>(
+    formatter: Formatter<S, U>,
+    msg: Partial<Record<V, Message<T, S, U>>> | undefined,
+    args: U
+) => (messageName: V, defaultMsg: string): string => {
+    return formatter(
+        msg && msg[messageName]
+            ? typeof msg[messageName] === "function"
+              ? (msg[messageName] as any)(args)
+              : msg[messageName]
+            : defaultMsg,
+        args
+    );
+};
 
 /**
  * Validates that a value is at least {chars} long
@@ -115,31 +146,23 @@ export type ValidationFnCreator<T, U, V, W> = (
  */
 const atLeast = <T>(
     params: { chars: number },
-    msg?: AtLeastXCharsMessages<T>
-) => ({ valid, invalid }: Reporters, formatter: Formatter<T>) => (
-    value: string
-) => {
+    msg?: AtLeastXCharsMessages<T, string>
+) => (
+    { valid, invalid }: Reporters,
+    formatter: Formatter<T, MessageParams<{ chars: number }>>
+) => (value: string) => {
+    const format = useFormatter(formatter, msg, { ...params, value });
+
     if (!value) {
-        return invalid(
-            formatter(
-                msg && msg.undef
-                    ? msg.undef()
-                    : (`Please enter a value` as any),
-                { ...params, value }
-            )
-        );
+        return invalid(format("undef", `Please enter a value`));
     }
 
     return value.length >= params.chars
         ? valid()
         : invalid(
-              formatter(
-                  msg && msg.short
-                      ? msg.short(value)
-                      : (`Entry must be at least ${
-                            params.chars
-                        } characters long` as any),
-                  { ...params, value }
+              format(
+                  "short",
+                  `Entry must be at least ${params.chars} characters long`
               )
           );
 };
@@ -151,22 +174,20 @@ const atLeast = <T>(
  */
 const atMost = <T>(params: { chars: number }, msg: AtMostXCharsMessages<T>) => (
     { valid, invalid }: Reporters,
-    formatter: Formatter<T>
+    formatter: Formatter<T, MessageParams<{ chars: number }>>
 ) => (value: string) => {
     if (!value) {
         return valid();
     }
 
+    const format = useFormatter(formatter, msg, { ...params, value });
+
     return value.length <= params.chars
         ? valid()
         : invalid(
-              formatter(
-                  msg && msg.long
-                      ? msg.long(value)
-                      : (`Entry must be no more than ${
-                            params.chars
-                        } characters long` as any),
-                  { ...params, value }
+              format(
+                  "long",
+                  `Entry must be no more than ${params.chars} characters long`
               )
           );
 };
@@ -177,22 +198,17 @@ const atMost = <T>(params: { chars: number }, msg: AtMostXCharsMessages<T>) => (
  */
 const numeric = <T>(msg?: NumericMessages<T>) => (
     { valid, invalid }: Reporters,
-    formatter: Formatter<T>
+    formatter: Formatter<T, MessageParams<{}>>
 ) => (value: string) => {
     if (typeof value === "undefined") {
         return valid();
     }
 
+    const format = useFormatter(formatter, msg, { value });
+
     return /^[0-9]*$/.test(value || "")
         ? valid()
-        : invalid(
-              formatter(
-                  msg && msg.nonNumeric
-                      ? msg.nonNumeric(value)
-                      : (`Entered value must be a number` as any),
-                  { value }
-              )
-          );
+        : invalid(format("nonNumeric", `Entered value must be a number`));
 };
 
 /**
@@ -203,7 +219,10 @@ const numeric = <T>(msg?: NumericMessages<T>) => (
 const all = <T, U>(
     validators: Array<ValidationFnWithReporters<T, U>>,
     combiner?: (errors: string[]) => string
-): ValidationFnWithReporters<T, U> => (reporters, formatter) => async val => {
+) => (
+    reporters: Reporters,
+    formatter: Formatter<U, MessageParams<FieldValue, any>>
+) => async (val: T) => {
     const results = await Promise.all(
         validators.map(validator => validator(reporters, formatter)(val))
     );

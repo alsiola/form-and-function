@@ -24,18 +24,18 @@ const validators = validation.create({
             validation.atLeast(
                 { chars: 3 },
                 {
-                    short: () => `at least 3 characters long`,
-                    undef: () => "provided"
+                    short: "at least 3 characters long",
+                    undef: "provided"
                 }
             ),
             validation.atMost(
                 { chars: 7 },
                 {
-                    long: () => `at most 7 characters long`
+                    long: ({ chars }) => `at most ${chars} characters long`
                 }
             ),
             validation.numeric({
-                nonNumeric: () => `numeric only`
+                nonNumeric: `numeric only`
             })
         ],
         errors => `Entry must be ${errors.join(" and ")}.`

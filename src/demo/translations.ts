@@ -5,6 +5,7 @@ export const translations: Record<string, Record<string, string>> = {
         "form.validation.long": "au minimum de {chars} caractères",
         "form.validation.undef": "fourni",
         "form.validation.combine": " et ",
+        "form.validation.nonNumeric": "Uniquement les nombres",
         "form.title": "Forme internationalisée",
         "form.field1": "Champ un",
         "form.field2": "Champ deux",

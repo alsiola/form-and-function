@@ -190,9 +190,17 @@ They can be used as follows:
 
 #### Custom Validation Errors
 
-If customised error messages are needed, then an object of error message functions can be passed to the validator - the only
-argument to `numeric`, or the second argument to `atLeast`/`atMost`. All message functions are optional, and they will be
-passed the invalid value as an argument.
+If customised error messages are needed, then an object of error messages can be passed to the validator - the only
+argument to `numeric`, or the second argument to `atLeast`/`atMost`.
+A function can also be passed for each message, which will be called with the an object - the union of the inputted
+value and the validator params, e.g. for `validation.atLeast`:
+
+```js
+{
+    value: "whatever was entered",
+    chars: 3
+}
+```
 
 ```js
 <Form
@@ -200,13 +208,16 @@ passed the invalid value as an argument.
         firstName: validation.atLeast(
             { chars: 3 },
             {
-                short: () => "Please enter 3 characters minimum",
-                undef: () => "You must enter a message"
+                short: ({ chars, value }) =>
+                    `Please enter ${chars} characters minimum, you entered ${
+                        value.length
+                    }`,
+                undef: "You must enter a message"
             }
         ),
         age: validation.numeric({
-            nonNumeric: enteredValue =>
-                `Please enter a number - you entered ${enteredValue}`
+            nonNumeric: ({ value }) =>
+                `Please enter a number - you entered ${value}`
         })
     })}
 />

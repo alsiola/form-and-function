@@ -7,6 +7,10 @@ export const messages = {
         id: "form.validation.short",
         defaultMessage: "at least {chars} characters"
     },
+    nonNumeric: {
+        id: "form.validation.nonNumeric",
+        defaultMessage: "Numbers only"
+    },
     long: {
         id: "form.validation.long",
         defaultMessage: "at most {chars} characters"

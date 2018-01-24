@@ -22,30 +22,20 @@ const fields = (formatter: any) => [
 ];
 
 const makeValidators = (
-    formatter: Formatter<FormattedMessage.MessageDescriptor>
+    formatter: Formatter<FormattedMessage.MessageDescriptor, any>
 ) =>
     validation.create(
         {
             field1: validation.all(
                 [
-                    validation.atLeast(
-                        { chars: 7 },
-                        {
-                            short: () => messages.short,
-                            undef: () => messages.undef
-                        }
-                    ),
-                    validation.atMost(
-                        { chars: 2 },
-                        {
-                            long: () => messages.long
-                        }
-                    )
+                    validation.atLeast({ chars: 7 }, messages),
+                    validation.atMost({ chars: 2 }, messages)
                 ],
                 errors =>
                     formatter(messages.start) +
                     errors.join(formatter(messages.combine))
-            )
+            ),
+            field2: validation.numeric(messages)
         },
         formatter
     );
