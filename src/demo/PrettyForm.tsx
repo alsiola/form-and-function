@@ -31,7 +31,6 @@ export const PrettyForm: React.SFC<
             <Field
                 key={name}
                 name={name}
-                onChange={console.log}
                 render={PrettyField}
                 renderProps={{
                     label,
@@ -47,15 +46,17 @@ export const PrettyForm: React.SFC<
         <Message error={true} hidden={!submitted || valid}>
             <Message.Header>You done made a boo boo.</Message.Header>
             <Message.List>
-                {Object.entries(errors).map(([key, value]) =>
-                    fields
-                        .filter(f => f.name === key)
-                        .map(({ label, name }) => (
-                            <Message.Item key={name}>
-                                {label}: {value.error}
-                            </Message.Item>
-                        ))
-                )}
+                {Object.entries(errors).map(([key, { error }]) => (
+                    <Message.Item key={key}>
+                        {
+                            (
+                                fields.find(f => f.name === key) || {
+                                    name: "Form"
+                                }
+                            ).name
+                        }: {error}
+                    </Message.Item>
+                ))}
             </Message.List>
         </Message>
     </Form>

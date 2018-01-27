@@ -15,6 +15,14 @@ const fields = [
     {
         name: "field2",
         label: "Field 2"
+    },
+    {
+        name: "password",
+        label: "Password"
+    },
+    {
+        name: "passwordConfirm",
+        label: "Confirm Password"
     }
 ];
 
@@ -40,7 +48,12 @@ const validators = validation.create({
         ],
         errors => `Entry must be ${errors.join(" and ")}.`
     ),
-    field2: validation.atLeast({ chars: 5 })
+    field2: validation.atLeast({ chars: 5 }),
+    password: validation.covalidate(
+        { fields: ["passwordConfirm"] },
+        validation.atLeast({ chars: 5 })
+    ),
+    passwordConfirm: validation.matches({ fields: ["password"] })
 });
 
 export const ValidatedForm = () => (
