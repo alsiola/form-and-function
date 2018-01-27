@@ -15,6 +15,8 @@ Many modern applications need to be internationalized, and this can be an issue 
 
 In modern JavaScript development bundle size is always a concern - currently form-and-function weights in at just 3.54KB gzipped (14.87KB uncompressed).
 
+[Examples](#examples)
+
 ## Examples
 
 There are several examples in the `demo` folder of this repository. They can be run locally by cloning this repository, installing dependencies and running `yarn start`. If anything is unclear then raise an issue, or tweet me @bigalreturns
