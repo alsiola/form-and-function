@@ -165,6 +165,7 @@ import { Form, validation } from "form-and-function";
 
 If this looks long-winded then say hello to some built in validators! Currently we provide the following:
 
+* `validation.required` - Is the value defined, with a length of > 0 when converted to a string
 * `validation.atLeast` - Is the value at least some length.
 * `validation.atMost` - Is the value at most some length.
 * `validation.numeric` - Is the value numeric only.
@@ -173,6 +174,16 @@ If this looks long-winded then say hello to some built in validators! Currently 
 * `validation.matches` - Does the value match a specified regular expression
 
 They can be used as follows:
+
+#### required
+
+```js
+<Form
+    validators={validation.create({
+        age: validation.required()
+    })}
+/>
+```
 
 #### numeric
 
@@ -232,8 +243,7 @@ Is the entered value alphabetic only
 
 #### Custom Validation Errors
 
-If customised error messages are needed, then an object of error messages can be passed to the validator - the only
-argument to `numeric`, or the second argument to `atLeast`/`atMost`.
+If customised error messages are needed, then an object of error messages can be passed to the validator. If the validator takes parameters (e.g. atLeast ), then this is the second argument. If the validation takes no parameters (e.g. required ) then it is the only argument.
 A function can also be passed for each message, which will be called with the an object - the union of the inputted
 value and the validator params, e.g. for `validation.atLeast`:
 
