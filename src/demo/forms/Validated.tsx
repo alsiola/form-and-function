@@ -23,6 +23,14 @@ const fields = [
     {
         name: "passwordConfirm",
         label: "Confirm Password"
+    },
+    {
+        name: "enter3",
+        label: "Enter 3"
+    },
+    {
+        name: "aToF",
+        label: "a - f only"
     }
 ];
 
@@ -53,7 +61,12 @@ const validators = validation.create({
         { fields: ["passwordConfirm"] },
         validation.atLeast({ chars: 5 })
     ),
-    passwordConfirm: validation.matches({ field: "password" })
+    passwordConfirm: validation.equalTo({ field: "password" }),
+    enter3: validation.exactly({ value: "3" }),
+    aToF: validation.all([
+        validation.matches({ regex: /^[a-f]+$/ }),
+        validation.required()
+    ])
 });
 
 export const ValidatedForm = () => (

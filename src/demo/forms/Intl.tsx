@@ -5,7 +5,6 @@ import { Form, validation } from "../../lib";
 
 import { PrettyForm } from "../PrettyForm";
 import { messages } from "./messages";
-import { Formatter } from "../../lib/validators";
 
 const initialValues = {
     field1: "123"
@@ -23,13 +22,13 @@ const fields = (formatter: any) => [
 ];
 
 const makeValidators = (
-    formatter: Formatter<FormattedMessage.MessageDescriptor, any>
+    formatter: validation.Formatter<FormattedMessage.MessageDescriptor, any>
 ) =>
     validation.create(
         {
             field1: validation.all(
                 [
-                    validation.atLeast({ chars: 7 }, messages),
+                    // validation.atLeast({ chars: 7 }, messages),
                     validation.atMost({ chars: 2 }, messages)
                 ],
                 errors =>

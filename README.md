@@ -168,7 +168,7 @@ If this looks long-winded then say hello to some built in validators! Currently 
 * `validation.atLeast` - Is the value at least some length.
 * `validation.atMost` - Is the value at most some length.
 * `validation.numeric` - Is the value numeric only.
-* `validation.matches` - Does the value match that of another field
+* `validation.equalTo` - Does the value match that of another field
 
 They can be used as follows:
 
@@ -199,7 +199,7 @@ Ensure that `passwordConfirm` field is the same as `password` field.
 ```js
 <Form
     validators={validation.create({
-        passwordConfirm: validation.matches({ field: "password" })
+        passwordConfirm: validation.equalTo({ field: "password" })
     })}
 />
 ```
@@ -300,7 +300,7 @@ It is not infrequent that the validation of a field depends upon the value of an
 <Form
     validators={validation.create({
         password: validation.atLeast({ chars: 8 }),
-        passwordConfirm: validation.matches({ field: "password" })
+        passwordConfirm: validation.equalTo({ field: "password" })
     })}
 />
 ```

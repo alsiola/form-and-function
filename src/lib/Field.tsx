@@ -2,7 +2,7 @@ import * as React from "react";
 import { EventHandler, SyntheticEvent } from "react";
 import { FormState } from "./Form";
 import { StateEngine } from "./stateEngine";
-import { FieldResult, isInvalidResult } from "./validators";
+import { FieldResult, isInvalidResult } from "./validation";
 import { FieldValue } from "./Form";
 
 /**
@@ -103,6 +103,9 @@ export const makeField = (
                     },
                     value: initialValue
                 });
+
+            // Easy way to trigger validation of initialValue
+            formActions.onChange(props.name, initialValue);
         }
 
         /**

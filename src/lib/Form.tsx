@@ -7,12 +7,12 @@ import {
     validFn,
     FieldResult,
     isInvalidResult,
-    ValidatorFn,
-    ValidationErrors,
+    Validator,
     isCovalidateResult,
     invalidFn,
-    CovalidatedFieldResult
-} from "./validators";
+    CovalidatedFieldResult,
+    InvalidFieldResult
+} from "./validation";
 
 export type FieldValue = string | boolean | number;
 
@@ -40,7 +40,7 @@ export interface InjectedFormProps<
     meta: {
         valid: boolean;
         submitted: boolean;
-        errors: ValidationErrors;
+        errors: Record<string, InvalidFieldResult>;
         isValidating: boolean;
     };
     actions: {
@@ -56,7 +56,7 @@ export interface InjectedFormProps<
 export interface FormProps<T extends object | void, U extends object | void> {
     name: string;
     render: React.SFC<InjectedFormProps<T, U>>;
-    validators?: Record<string, ValidatorFn<FieldValue>>;
+    validators?: Record<string, Validator<FieldValue>>;
     initialValues?: FieldValueMap;
     onSubmit?: EventHandler;
     onSubmitFailed?: EventHandler;
@@ -352,9 +352,7 @@ export class Form<
                                 }
                               : {}
                       ),
-                  isInvalidResult(validation)
-                      ? { form: validation }
-                      : ({} as ValidationErrors)
+                  isInvalidResult(validation) ? { form: validation } : {}
               );
 
         const isValidating = Object.values(fields).some(
