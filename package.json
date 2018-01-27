@@ -39,8 +39,7 @@
         "build-demo": "react-scripts-ts build && mv build docs",
         "test": "react-scripts-ts test --env=jsdom",
         "eject": "react-scripts-ts eject",
-        "remove-rollup-ts":
-            "rimraf node_modules/rollup-plugin-typescript/node_modules/typescript",
+        "remove-rollup-ts": "rimraf node_modules/rollup-plugin-typescript/node_modules/typescript",
         "prepublish": "yarn build"
     }
 }
