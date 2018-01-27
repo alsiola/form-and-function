@@ -2,7 +2,7 @@ import * as React from "react";
 import { EventHandler, SyntheticEvent } from "react";
 import { FormState } from "./Form";
 import { StateEngine } from "./stateEngine";
-import { FieldResult, isInvalidResult } from "./validation";
+import { FieldResult, isInvalidResult } from "./validation/index";
 import { FieldValue } from "./Form";
 
 /**
