@@ -9,10 +9,9 @@ import {
     isInvalidResult,
     Validator,
     isCovalidateResult,
-    invalidFn,
     CovalidatedFieldResult,
     InvalidFieldResult
-} from "./validation";
+} from "./validation/index";
 
 export type FieldValue = string | boolean | number;
 
