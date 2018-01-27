@@ -18,7 +18,7 @@ export interface ExactlyParams<T> {
 
 /**
  * Validates that a value is exactly a provided value
- * @param value Value to match
+ * @param params Value to match
  * @param msg Error messages when invalid
  */
 export const exactly = <T, U>(

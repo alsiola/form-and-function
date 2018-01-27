@@ -15,8 +15,8 @@ export interface MatchesMessages<T = string, U = string> {
 }
 
 /**
- * Validates that a value is at most {chars} long
- * @param chars Maximum number of characters
+ * Validates that a value matches a RegExp
+ * @param params The RegExp against which to test the value
  * @param msg Error messages when invalid
  */
 export const matches = <T>(params: MatchesParams, msg?: MatchesMessages<T>) => (

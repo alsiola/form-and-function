@@ -14,8 +14,8 @@ export interface EqualToParams {
 }
 
 /**
- * Validates that a value is at least {chars} long
- * @param chars Minimum number of characters
+ * Validates that a value is the same as another field
+ * @param params The field to match
  * @param msg Error messages when invalid
  */
 export const equalTo = <T>(
