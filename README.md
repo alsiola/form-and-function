@@ -301,7 +301,7 @@ an array of validators.
 />
 ```
 
-By default, error messages produced in `validation.all` are joined with " and " - this would produce an error such as:
+By default, error messages produced in `validation.all` are joined with `" and "` - this would produce an error such as:
 
 `Please enter 3 characters minimum and Please enter a number`
 
