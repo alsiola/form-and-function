@@ -5,6 +5,7 @@
     "module": "dist/form-and-function.esm.js",
     "browser": "dist/form-and-function.umd.js",
     "types": "dist/modules/index.d.ts",
+    "homepage": "https://alsiola.github.io/form-and-function",
     "dependencies": {},
     "peerDependencies": {
         "react": "^15",
