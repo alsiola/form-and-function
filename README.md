@@ -15,7 +15,16 @@ Many modern applications need to be internationalized, and this can be an issue 
 
 In modern JavaScript development bundle size is always a concern - currently form-and-function weights in at just 3.54KB gzipped (14.87KB uncompressed).
 
-[Examples](#examples)
+* [Examples](#examples)
+* [Installation](#installation)
+* [Usage](#usage)
+    * [Validation](#validation)
+        * [Built-In Validators](#built-in-validators)
+        * [Custom Errors](#custom-validation-errors)
+        * [Combining Validators](#combining-validators)
+        * [Covalidating Fields](#covalidated-fields)
+        * [Custom Validators](#writing-your-own-validators)
+    * [Internationalization](#internationalization)
 
 ## Examples
 
@@ -166,6 +175,8 @@ import { Form, validation } from "form-and-function";
     })}
 />;
 ```
+
+#### Built In Validators
 
 If this looks long-winded then say hello to some built in validators! Currently we provide the following:
 
