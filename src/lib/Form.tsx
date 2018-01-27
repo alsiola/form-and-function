@@ -8,7 +8,10 @@ import {
     FieldResult,
     isInvalidResult,
     ValidatorFn,
-    ValidationErrors
+    ValidationErrors,
+    isCovalidateResult,
+    invalidFn,
+    CovalidatedFieldResult
 } from "./validators";
 
 export type FieldValue = string | boolean | number;
@@ -65,6 +68,9 @@ export interface FormProps<T extends object | void, U extends object | void> {
 export interface FormState {
     fields: FieldMap;
     submitted: boolean;
+    meta: {
+        validation: FieldResult;
+    };
 }
 
 export class Form<
@@ -92,8 +98,24 @@ export class Form<
         this.stateEngine =
             props.stateEngine ||
             componentStateEngine(this, {
+                // fields: Object.entries(props.initialValues).reduce(
+                //     (out, [field, value]) => ({
+                //         ...out,
+                //         [field]: {
+                //             value,
+                //             meta: {
+                //                 validation: this.validate(field, value)
+                //             }
+                //         }
+                //     })
+                // ) as any,
                 fields: {},
-                submitted: false
+                submitted: false,
+                meta: {
+                    validation: {
+                        valid: true
+                    }
+                }
             });
         this.makeField();
     }
@@ -112,7 +134,6 @@ export class Form<
         this.Field = makeField(
             {
                 onChange: this.handleFieldChange,
-                validate: this.validate,
                 getInitialValue: this.getInitialValue
             },
             this.stateEngine,
@@ -144,8 +165,11 @@ export class Form<
      * Is every field passing validation
      */
     private allValid = (validationResult: FieldMap): boolean => {
-        return Object.values(validationResult).every(
-            r => r.meta.validation.valid
+        return (
+            this.stateEngine.select(s => s.meta.validation.valid) &&
+            Object.values(validationResult).every(
+                r => (r.meta.validation ? r.meta.validation.valid : true)
+            )
         );
     };
 
@@ -155,22 +179,122 @@ export class Form<
      */
     private validate = async (
         name: string,
-        value: FieldValue
-    ): Promise<FieldResult> => {
+        value: FieldValue | undefined
+    ): Promise<FieldResult | CovalidatedFieldResult> => {
+        const fields = this.stateEngine.select(s => s.fields);
+
+        if (this.props.validators && this.props.validators.form) {
+            const formResult = await this.props.validators.form("", fields);
+
+            if (isCovalidateResult(formResult)) {
+                await formResult.covalidate.map(field =>
+                    this.validate(field, fields[field].value)
+                );
+            } else {
+                await this.stateEngine.set({
+                    meta: {
+                        validation: formResult
+                    }
+                });
+            }
+        }
+
         if (!this.props.validators) {
             return validFn();
         }
 
         const validator = this.props.validators[name];
 
-        return validator ? validator(value) : validFn();
+        if (!validator) {
+            return validFn();
+        }
+
+        const result = await validator(value, fields);
+
+        return result;
     };
 
     /**
      * Called by Fields when their value changes
      * If a form onChange handler was passed as a prop, call it
      */
-    private handleFieldChange = () => {
+    private handleFieldChange = async (
+        fieldName: string,
+        value: FieldValue | undefined
+    ) => {
+        await this.stateEngine.set(({ fields }) => ({
+            fields: {
+                ...fields,
+                [fieldName]: {
+                    ...fields[fieldName],
+                    value,
+                    meta: {
+                        ...(fields[fieldName] || {}).meta,
+                        isValidating: true
+                    }
+                }
+            }
+        }));
+
+        this.validate(fieldName, value).then(validation => {
+            if (isCovalidateResult(validation)) {
+                Promise.all(
+                    validation.covalidate.map(async covalidatedField => ({
+                        covalidatedField,
+                        result: await this.validate(
+                            covalidatedField,
+                            this.stateEngine.select(
+                                s => s.fields[covalidatedField].value
+                            )
+                        )
+                    }))
+                ).then(covalidateResults => {
+                    this.stateEngine.set(({ fields }) => ({
+                        fields: {
+                            ...fields,
+                            ...covalidateResults.reduce(
+                                (out, { covalidatedField, result }) => ({
+                                    ...out,
+                                    [covalidatedField]: {
+                                        ...fields[covalidatedField],
+                                        meta: {
+                                            ...(fields[covalidatedField] || {})
+                                                .meta,
+                                            validation: result,
+                                            isValidating: false
+                                        }
+                                    }
+                                }),
+                                {}
+                            ),
+                            [fieldName]: {
+                                ...fields[fieldName],
+                                meta: {
+                                    ...(fields[fieldName] || {}).meta,
+                                    validation: validation.result,
+                                    isValidating: false
+                                }
+                            }
+                        }
+                    }));
+                });
+            } else {
+                this.stateEngine.set(({ fields }) => ({
+                    fields: {
+                        ...fields,
+                        [fieldName]: {
+                            ...fields[fieldName],
+                            meta: {
+                                ...(fields[fieldName] || {}).meta,
+                                validation,
+                                isValidating: false
+                            }
+                        }
+                    }
+                }));
+            }
+        });
+
         (this.props.onChange as EventHandler)(
             this.stateEngine.select(s => s.fields)
         );
@@ -202,7 +326,11 @@ export class Form<
             renderProps
         } = this.props;
 
-        const { submitted, fields } = this.stateEngine.get();
+        const {
+            submitted,
+            fields,
+            meta: { validation }
+        } = this.stateEngine.get();
 
         const valid = this.allValid(fields);
 
@@ -224,7 +352,9 @@ export class Form<
                                 }
                               : {}
                       ),
-                  {} as ValidationErrors
+                  isInvalidResult(validation)
+                      ? { form: validation }
+                      : ({} as ValidationErrors)
               );
 
         const isValidating = Object.values(fields).some(

@@ -1,10 +1,11 @@
 import * as React from "react";
 import { Button, ButtonGroup, Divider } from "semantic-ui-react";
 import { FormattedMessage, InjectedIntlProps, injectIntl } from "react-intl";
-import { Form, validation, Formatter } from "../../lib";
+import { Form, validation } from "../../lib";
 
 import { PrettyForm } from "../PrettyForm";
 import { messages } from "./messages";
+import { Formatter } from "../../lib/validators";
 
 const initialValues = {
     field1: "123"

@@ -64,8 +64,7 @@ export type FieldRecordUpdate = FieldRecordAny<Partial<FieldMeta>>;
  * its value has changed
  */
 export interface FormActions {
-    onChange: () => void;
-    validate: (name: string, x: FieldValue | undefined) => Promise<FieldResult>;
+    onChange: (name: string, newValue: FieldValue | undefined) => void;
     getInitialValue: (name: string) => FieldValue | undefined;
 }
 
@@ -103,17 +102,6 @@ export const makeField = (
                         isValidating: false
                     },
                     value: initialValue
-                });
-
-            // Run validation on initialValue and update
-            formActions
-                .validate(props.name, formActions.getInitialValue(props.name))
-                .then(validation => {
-                    this.updateState({
-                        meta: {
-                            validation
-                        }
-                    });
                 });
         }
 
@@ -200,27 +188,7 @@ export const makeField = (
 
             onChange && onChange(e);
 
-            return Promise.all([
-                this.updateState({
-                    value
-                }).then(formActions.onChange),
-                this.updateState({
-                    meta: {
-                        isValidating: true
-                    }
-                }).then(() =>
-                    formActions
-                        .validate(this.props.name, value)
-                        .then(validation =>
-                            this.updateState({
-                                meta: {
-                                    validation,
-                                    isValidating: false
-                                }
-                            })
-                        )
-                )
-            ]);
+            formActions.onChange(this.props.name, value);
         };
 
         render() {

@@ -1,16 +1,28 @@
-import { FieldValue } from "./index";
+import { FieldValue, FieldMap, FieldMeta, FieldRecordAny } from "./index";
+/**
+ * Needed to stop TS moaning
+ */
+export type A = FieldMeta;
+export type B = FieldRecordAny;
 
 export type Reporter = (error?: string) => FieldResult;
 
-export type ValidatorFn<T> = (
-    x: T | undefined
-) => FieldResult | Promise<FieldResult>;
+export type ResultTypes =
+    | FieldResult
+    | CovalidatedFieldResult
+    | Promise<FieldResult | CovalidatedFieldResult>;
+
+export type ValidatorFn<T, U = ResultTypes> = (
+    x: T | undefined,
+    fields?: FieldMap
+) => U;
 
 export type ValidationFnWithReporters<
     T = FieldValue | undefined,
     U = any,
-    V = any
-> = (reporters: Reporters, formatter: Formatter<U, V>) => ValidatorFn<T>;
+    V = any,
+    W = ResultTypes
+> = (reporters: Reporters, formatter?: Formatter<U, V>) => ValidatorFn<T, W>;
 
 export type ParamaterizedValidationFn<T, U> = (
     ...params: any[]
@@ -46,10 +58,27 @@ export interface ValidFieldResult {
 
 export type FieldResult = ValidFieldResult | InvalidFieldResult;
 
+export interface CovalidatedFieldResult {
+    result: FieldResult;
+    covalidate: string[];
+}
+
+export const isCovalidateResult = (
+    a: FieldResult | CovalidatedFieldResult
+): a is CovalidatedFieldResult => {
+    return "result" in a;
+};
+
 export const isInvalidResult = (
     result: FieldResult
 ): result is InvalidFieldResult => {
     return !result.valid;
+};
+
+export const isValid = (
+    result: FieldResult | CovalidatedFieldResult
+): boolean => {
+    return isCovalidateResult(result) ? result.result.valid : result.valid;
 };
 
 /**
@@ -74,15 +103,17 @@ export type Formatter<T, U> = (x: T, params?: U) => string;
  * Passes the validation reporters to each entry in an object
  * @param validationMap Object of field validators { [ fieldName: string ]: ValidationFunction }
  */
-const create = <T = FieldValue, U = string>(
+export const create = <T = FieldValue, U = string>(
     validationMap: Record<string, ValidationFnWithReporters<T, U>>,
-    formatter: Formatter<U, MessageParams<FieldValue, any>> = ((x: string) =>
-        x) as any
+    formatter?: Formatter<U, MessageParams<FieldValue, any>>
 ) => {
     return Object.entries(validationMap).reduce(
         (out, [key, value]) => ({
             ...out,
-            [key]: value({ valid: validFn, invalid: invalidFn }, formatter)
+            [key]: value(
+                { valid: validFn, invalid: invalidFn },
+                formatter || (((x: string) => x) as any)
+            )
         }),
         {}
     );
@@ -115,6 +146,10 @@ export interface NumericMessages<T = string, U = string>
     nonNumeric?: Message<T, void, U>;
 }
 
+export interface MatchesMessages<T = string, U = string> {
+    different?: Message<T, void, U>;
+}
+
 export type ValidationFnCreator<T, U, V, W> = (
     params: T,
     msg?: U
@@ -125,18 +160,17 @@ export type ValidationFnCreator<T, U, V, W> = (
 // U params type
 // V message name
 const useFormatter = <S, T, U, V extends string>(
-    formatter: Formatter<S, U>,
     msg: Partial<Record<V, Message<T, S, U>>> | undefined,
-    args: U
+    args: U,
+    formatter?: Formatter<S, U>
 ) => (messageName: V, defaultMsg: string): string => {
-    return formatter(
+    const message =
         msg && msg[messageName]
             ? typeof msg[messageName] === "function"
               ? (msg[messageName] as any)(args)
               : msg[messageName]
-            : defaultMsg,
-        args
-    );
+            : defaultMsg;
+    return formatter ? formatter(message, args) : message;
 };
 
 /**
@@ -144,14 +178,51 @@ const useFormatter = <S, T, U, V extends string>(
  * @param chars Minimum number of characters
  * @param msg Error messages when invalid
  */
-const atLeast = <T>(
+export const matches = <T>(
+    params: { fields: string[] },
+    msg?: MatchesMessages<T, string>
+) => (
+    { valid, invalid }: Reporters,
+    formatter?: Formatter<T, MessageParams<{ fields: string[] }>>
+) => (value: string, fields: FieldMap) => {
+    const format = useFormatter(msg, { ...params, value }, formatter);
+
+    let allMatch = true;
+    try {
+        params.fields.forEach(fieldName => {
+            if (value !== fields[fieldName].value) {
+                throw "mismatch";
+            }
+        });
+    } catch {
+        allMatch = false;
+    }
+
+    if (allMatch) {
+        return valid();
+    } else {
+        return invalid(
+            format(
+                "different",
+                `Fields ${params.fields.join(" and ")} must match.`
+            )
+        );
+    }
+};
+
+/**
+ * Validates that a value is at least {chars} long
+ * @param chars Minimum number of characters
+ * @param msg Error messages when invalid
+ */
+export const atLeast = <T>(
     params: { chars: number },
     msg?: AtLeastXCharsMessages<T, string>
 ) => (
     { valid, invalid }: Reporters,
-    formatter: Formatter<T, MessageParams<{ chars: number }>>
+    formatter?: Formatter<T, MessageParams<{ chars: number }>>
 ) => (value: string) => {
-    const format = useFormatter(formatter, msg, { ...params, value });
+    const format = useFormatter(msg, { ...params, value }, formatter);
 
     if (!value) {
         return invalid(format("undef", `Please enter a value`));
@@ -172,15 +243,18 @@ const atLeast = <T>(
  * @param chars Maximum number of characters
  * @param msg Error messages when invalid
  */
-const atMost = <T>(params: { chars: number }, msg: AtMostXCharsMessages<T>) => (
+export const atMost = <T>(
+    params: { chars: number },
+    msg: AtMostXCharsMessages<T>
+) => (
     { valid, invalid }: Reporters,
-    formatter: Formatter<T, MessageParams<{ chars: number }>>
+    formatter?: Formatter<T, MessageParams<{ chars: number }>>
 ) => (value: string) => {
     if (!value) {
         return valid();
     }
 
-    const format = useFormatter(formatter, msg, { ...params, value });
+    const format = useFormatter(msg, { ...params, value }, formatter);
 
     return value.length <= params.chars
         ? valid()
@@ -196,7 +270,7 @@ const atMost = <T>(params: { chars: number }, msg: AtMostXCharsMessages<T>) => (
  * Validates that a value is only numbers
  * @param msg Error messages when invalid
  */
-const numeric = <T>(msg?: NumericMessages<T>) => (
+export const numeric = <T>(msg?: NumericMessages<T>) => (
     { valid, invalid }: Reporters,
     formatter: Formatter<T, MessageParams<{}>>
 ) => (value: string) => {
@@ -204,7 +278,7 @@ const numeric = <T>(msg?: NumericMessages<T>) => (
         return valid();
     }
 
-    const format = useFormatter(formatter, msg, { value });
+    const format = useFormatter(msg, { value }, formatter);
 
     return /^[0-9]*$/.test(value || "")
         ? valid()
@@ -216,18 +290,23 @@ const numeric = <T>(msg?: NumericMessages<T>) => (
  * @param validators Validators to combine
  * @param combiner How to combine error messages
  */
-const all = <T, U>(
+export const all = <T, U>(
     validators: Array<ValidationFnWithReporters<T, U>>,
     combiner?: (errors: string[]) => string
 ) => (
     reporters: Reporters,
     formatter: Formatter<U, MessageParams<FieldValue, any>>
-) => async (val: T) => {
+) => async (val: T): Promise<FieldResult | CovalidatedFieldResult> => {
     const results = await Promise.all(
-        validators.map(validator => validator(reporters, formatter)(val))
+        validators.map(
+            validator =>
+                validator(reporters, formatter)(val) as Promise<
+                    FieldResult | CovalidatedFieldResult
+                >
+        )
     );
 
-    if (results.every(r => r.valid)) {
+    if (results.every(isValid)) {
         return reporters.valid();
     }
 
@@ -238,10 +317,36 @@ const all = <T, U>(
     );
 };
 
-export const validation = {
+export const covalidate = <T, U>(
+    params: { fields: string[] },
+    validator: ValidationFnWithReporters<
+        T,
+        U,
+        any,
+        FieldResult | Promise<FieldResult>
+    >
+) => (
+    reporters: Reporters,
+    formatter?: Formatter<U, MessageParams<FieldValue, any>>
+) => async (val: T, fields: FieldMap): Promise<CovalidatedFieldResult> => {
+    console.log({
+        covalidate: params.fields,
+        result: await validator(reporters, formatter)(val, fields)
+    });
+    return {
+        covalidate: params.fields,
+        result: await validator(reporters, formatter)(val, fields)
+    };
+};
+
+const validation = {
+    create,
+    all,
     atLeast,
     atMost,
-    all,
-    create,
+    covalidate,
+    matches,
     numeric
 };
+
+export default validation;
