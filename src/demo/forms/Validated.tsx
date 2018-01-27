@@ -53,7 +53,7 @@ const validators = validation.create({
         { fields: ["passwordConfirm"] },
         validation.atLeast({ chars: 5 })
     ),
-    passwordConfirm: validation.matches({ fields: ["password"] })
+    passwordConfirm: validation.matches({ field: "password" })
 });
 
 export const ValidatedForm = () => (
