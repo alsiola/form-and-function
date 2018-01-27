@@ -357,6 +357,43 @@ Of course, we want to give feedback to our users on both fields. We can do this 
 />
 ```
 
+#### Writing Your Own Validators
+
+Although the provided validators cover a lot of sitations, undoubtedly at some point you will need to create your own. This is relatively simple. Validators must match the signature:
+
+```js
+({ valid, invalid }) => value => { valid: true } | { valid: false; error: string }
+```
+
+`valid` and `invalid` are functions that will generate appropriate results - if the value is valid then return `valid()`, if the value is invalid return `invalid("reason for invalidity")`.
+
+It's much easier to look at some example code, so let's make a validator that verifies that the provided value is an odd number of characters:
+
+```js
+const isOddLength = ({ valid, invalid }) => value => {
+    // It's possible that value is undefined, so checking up front is a good idea
+    if (typeof value === "undefined") {
+        return invalid("Please enter a value");
+    }
+
+    if (value.length % 2 === 1) {
+        return valid();
+    } else {
+        return invalid("Entered value must be an odd number of characters");
+    }
+};
+```
+
+We can now use the `isOddLength` validator like any other validator:
+
+```js
+<Form
+    validators={validation.create({
+        oddField: isOddLength
+    })}
+/>
+```
+
 ### Internationalization
 
 In the most part, `form-and-function` does not produce outputted strings but simply manages the form data, so i18n
