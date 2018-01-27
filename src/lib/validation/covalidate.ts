@@ -11,6 +11,11 @@ import { Formatter } from "./formatter";
 import { FieldValue, FieldMap } from "../Form";
 import { FieldMeta, FieldRecordAny } from "../Field";
 
+/**
+ * Specify that other fields should be revalidated when this field changes
+ * @param params Fields to covalidated
+ * @param validator Validator for this field
+ */
 export const covalidate = <T, U>(
     params: { fields: string[] },
     validator: CreateValidator<T, U, any, FieldResult | Promise<FieldResult>>

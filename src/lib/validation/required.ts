@@ -12,7 +12,7 @@ export interface NotUndefinedMessage<T = string, U = string> {
 }
 
 /**
- * Validates that a value is only numbers
+ * Validates that a value is not undefined or zero-length
  * @param msg Error messages when invalid
  */
 export const required = <T>(msg?: NotUndefinedMessage<T>) => (
