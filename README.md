@@ -7,12 +7,15 @@ form-and-function is a functional-inspired Form management library for React, wr
 Managing form state can be a pain, and the need for a form management abstraction is reasonably well
 established. redux-form is great at what it does, but depends upon you using a particular state-management
 solution. I wanted to create a state-management agnostic library (using simple component state by default) that
-provides similar convenience and ease of use. Additionally, internationalization is supported from the outset.
+provides similar convenience and ease of use.
+
+Another issue is that of form validation. As a fan of functional programming, I wanted validators that were pure functions that could be composed at will. I think the approach in form-and-function provides a better developer experience than the use of, for example, JSON schema based validation.
+
+Many modern applications need to be internationalized, and this can be an issue in form libraries. I18n has been considered from the start in the design of the API, with the aim of seamless integration with existing solutions.
 
 ## Examples
 
-There are several examples in the `demo` folder of this repository. If anything is unclear then raise an issue,
-or tweet me @bigalreturns
+There are several examples in the `demo` folder of this repository. They can be run locally by cloning this repository, installing dependencies and running `yarn start`. If anything is unclear then raise an issue, or tweet me @bigalreturns
 
 ## Installation
 
@@ -165,6 +168,7 @@ If this looks long-winded then say hello to some built in validators! Currently 
 * `validation.atLeast` - Is the value at least some length.
 * `validation.atMost` - Is the value at most some length.
 * `validation.numeric` - Is the value numeric only.
+* `validation.matches` - Does the value match that of another field
 
 They can be used as follows:
 
@@ -184,6 +188,18 @@ They can be used as follows:
 <Form
     validators={validation.create({
         firstName: validation.atLeast({ chars: 3 })
+    })}
+/>
+```
+
+#### matches
+
+Ensure that `passwordConfirm` field is the same as `password` field.
+
+```js
+<Form
+    validators={validation.create({
+        passwordConfirm: validation.matches({ field: "password" })
     })}
 />
 ```
@@ -275,6 +291,35 @@ an array of strings, and should return a string.
 Now we will get a much nicer looking message:
 
 `Please enter 3 characters minimum, and also numbers only`
+
+#### Covalidated fields
+
+It is not infrequent that the validation of a field depends upon the value of another field. For example, we might have a `password` field that requires its value be at least 8 characters long, and a `passwordConfirm` field that must match the `password` field. We could write these requirements like this:
+
+```js
+<Form
+    validators={validation.create({
+        password: validation.atLeast({ chars: 8 }),
+        passwordConfirm: validation.matches({ field: "password" })
+    })}
+/>
+```
+
+This works, but if you try it out you will notice that the validation of `passwordConfirm` does not change when we are typing into the `password` field. Why is this? It's because by default, when a field changes, only the validator for that field's value is run. In our case when we change `password`, form-and-function will validate `password` only, not `passwordConfirm`.
+
+Of course, we want to give feedback to our users on both fields. We can do this by using a covalidator to specify additional validators that should be run when a field's value changes. We want to run the `passwordConfirm` validator whenever `password` changes, so we create a covalidator on `password` as follows:
+
+```js
+<Form
+    validators={validation.create({
+        password: validation.covalidate(
+            { fields: [ "passwordConfirm" ]}
+            validation.atLeast({ chars: 8 })
+        ),
+        passwordConfirm: validation.matches({ field: "password" })
+    })}
+/>
+```
 
 ### Internationalization
 

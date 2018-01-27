@@ -179,34 +179,18 @@ const useFormatter = <S, T, U, V extends string>(
  * @param msg Error messages when invalid
  */
 export const matches = <T>(
-    params: { fields: string[] },
+    params: { field: string },
     msg?: MatchesMessages<T, string>
 ) => (
     { valid, invalid }: Reporters,
-    formatter?: Formatter<T, MessageParams<{ fields: string[] }>>
+    formatter?: Formatter<T, MessageParams<{ field: string }>>
 ) => (value: string, fields: FieldMap) => {
     const format = useFormatter(msg, { ...params, value }, formatter);
 
-    let allMatch = true;
-    try {
-        params.fields.forEach(fieldName => {
-            if (value !== fields[fieldName].value) {
-                throw "mismatch";
-            }
-        });
-    } catch {
-        allMatch = false;
-    }
-
-    if (allMatch) {
+    if (value === fields[params.field].value) {
         return valid();
     } else {
-        return invalid(
-            format(
-                "different",
-                `Fields ${params.fields.join(" and ")} must match.`
-            )
-        );
+        return invalid(format("different", `Must match ${params.field}`));
     }
 };
 
