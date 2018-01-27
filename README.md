@@ -284,7 +284,7 @@ an array of validators.
 ```js
 <Form
     validators={validation.all({
-        longNumber: validation.combine([
+        longNumber: validation.all([
             validation.atLeast(
                 { chars: 3 },
                 {
@@ -311,7 +311,7 @@ an array of strings, and should return a string.
 ```js
 <Form
     validators={validation.all({
-        longNumber: validation.combine([
+        longNumber: validation.all([
             validation.atLeast({ chars: 3 }, {
                 short: ({ chars }) => `${chars} characters minimum`,
                 undef: "provided"
