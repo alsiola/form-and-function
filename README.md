@@ -169,6 +169,8 @@ If this looks long-winded then say hello to some built in validators! Currently 
 * `validation.atMost` - Is the value at most some length.
 * `validation.numeric` - Is the value numeric only.
 * `validation.equalTo` - Does the value match that of another field
+* `validation.exactly` - Is the value exactly equal ( === ) to a specified value
+* `validation.matches` - Does the value match a specified regular expression
 
 They can be used as follows:
 
@@ -200,6 +202,30 @@ Ensure that `passwordConfirm` field is the same as `password` field.
 <Form
     validators={validation.create({
         passwordConfirm: validation.equalTo({ field: "password" })
+    })}
+/>
+```
+
+#### exactly
+
+Is the entered value exactly "form-and-function"
+
+```js
+<Form
+    validators={validation.create({
+        repositoryName: validation.exactly({ value: "form-and-function" })
+    })}
+/>
+```
+
+#### matches
+
+Is the entered value alphabetic only
+
+```js
+<Form
+    validators={validation.create({
+        repositoryName: validation.matches({ regex: /^[a-zA-Z]+$/ })
     })}
 />
 ```
