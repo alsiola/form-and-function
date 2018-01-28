@@ -35,7 +35,6 @@ export const RenderRadioForm: React.SFC<
 export const RadioForm = () => (
     <Form
         name="radio-form"
-        onChange={console.log}
         onSubmit={values => {
             console.log("Submitted with values", values);
         }}

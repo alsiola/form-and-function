@@ -10,6 +10,7 @@ import { ValidatedForm } from "./forms/Validated";
 import { AsyncForm } from "./forms/Async";
 import { IntlForm } from "./forms/Intl";
 import { RadioForm } from "./forms/RadioButtons";
+import { LinkedInputForm } from "./forms/LinkedInput";
 
 addLocaleData([...en, ...fr]);
 
@@ -45,6 +46,10 @@ export class App extends React.Component<{}, { locale: string }> {
 
                     <Segment padded="very">
                         <IntlForm changeLocale={this.changeLocale} />
+                    </Segment>
+
+                    <Segment padded="very">
+                        <LinkedInputForm />
                     </Segment>
                 </div>
             </IntlProvider>

@@ -1,12 +1,15 @@
 import * as React from "react";
-import { InjectedFormProps } from "../lib";
+import { InjectedFormProps, InjectedFieldProps } from "../lib";
 import { Form, Button, Message, Header } from "semantic-ui-react";
 import { PrettyField, PrettyFieldProps } from "./PrettyField";
+import { ReversingFieldProps, ReversingField } from "./ReversingField";
 
 export interface PrettyField {
     name: string;
     label: string;
     hint: string;
+    key?: string;
+    reverse?: boolean;
 }
 
 export interface PrettyFormProps {
@@ -17,7 +20,7 @@ export interface PrettyFormProps {
 }
 
 export const PrettyForm: React.SFC<
-    InjectedFormProps<PrettyFormProps, PrettyFieldProps>
+    InjectedFormProps<PrettyFormProps, PrettyFieldProps | ReversingFieldProps>
 > = ({
     form,
     meta: { valid, errors, submitted },
@@ -27,15 +30,16 @@ export const PrettyForm: React.SFC<
 }) => (
     <Form {...form} size="huge" error={true}>
         <Header as="h2">{title}</Header>
-        {fields.map(({ name, label, hint }) => (
+        {fields.map(({ name, label, hint, key, reverse }) => (
             <Field
-                key={name}
+                key={key || name}
                 name={name}
-                render={PrettyField}
+                render={reverse ? ReversingField : PrettyField}
                 renderProps={{
                     label,
                     submitted,
-                    hint
+                    hint,
+                    reverse
                 }}
             />
         ))}
