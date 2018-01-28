@@ -9,6 +9,7 @@ import { BasicForm } from "./forms/Basic";
 import { ValidatedForm } from "./forms/Validated";
 import { AsyncForm } from "./forms/Async";
 import { IntlForm } from "./forms/Intl";
+import { RadioForm } from "./forms/RadioButtons";
 
 addLocaleData([...en, ...fr]);
 
@@ -28,6 +29,10 @@ export class App extends React.Component<{}, { locale: string }> {
                 <div>
                     <Segment padded="very">
                         <BasicForm />
+                    </Segment>
+
+                    <Segment padded="very">
+                        <RadioForm />
                     </Segment>
 
                     <Segment padded="very">
