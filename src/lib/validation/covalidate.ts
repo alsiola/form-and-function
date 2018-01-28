@@ -11,20 +11,30 @@ import {
 import { Formatter } from "./formatter";
 import { FieldValue, FieldMap } from "../Form";
 import { FieldMeta, FieldRecordAny } from "../Field";
+
 /**
  * Specify that other fields should be revalidated when this field changes
+ * T is type of formatter result
+ * U is type of validation result
  * @param params Fields to covalidated
  * @param validator Validator for this field
  */
 export const covalidate = <T, U>(
     params: { fields: string[] },
-    validator: CreateValidator<FieldResult | Promise<FieldResult>, T, U>
-) => (
-    reporters: Reporters,
-    options?: CreateValidatorOptions<U, MessageParams<FieldValue, any>>
-) => async (val: T, fields: FieldMap): Promise<CovalidatedFieldResult> => {
+    validator: CreateValidator<
+        FieldResult | Promise<FieldResult>,
+        FieldValue,
+        T,
+        U
+    >
+): CreateValidator<
+    CovalidatedFieldResult | Promise<CovalidatedFieldResult>,
+    FieldValue,
+    T,
+    U
+> => (reporters, options) => async (val, fields) => {
     return {
         covalidate: params.fields,
-        result: await validator(reporters, options)(val, fields)
+        result: await validator(reporters, options as any)(val, fields)
     };
 };

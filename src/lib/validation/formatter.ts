@@ -1,5 +1,10 @@
 import { Message, CreateValidatorOptions } from "./typesAndGuards";
 
+/**
+ * String formatter (react-intl compat)
+ * T is type of validator output
+ * U is type of validator params
+ */
 export type Formatter<T, U> = (x: T, params?: U) => string;
 
 /**

@@ -16,19 +16,15 @@ import { FieldMeta, FieldRecordAny } from "../Field";
 
 /**
  * Combines validators so that at least one must be valid
+ * T is type of formatter result
+ * U is type of validation result
  * @param validators Validators to combine
  * @param combiner How to combine error messages
  */
-export const any = <T, U>(
-    validators: Array<CreateValidator<ValidationResult, T, U>>,
+export const any = (
+    validators: CreateValidator[],
     combiner?: (errors: string[]) => string
-) => (
-    reporters: Reporters,
-    options: CreateValidatorOptions<U, MessageParams<FieldValue, any>>
-) => async (
-    val: T,
-    fields: FieldMap
-): Promise<FieldResult | CovalidatedFieldResult> => {
+): CreateValidator => (reporters, options) => async (val, fields) => {
     const results = await Promise.all(
         validators.map(validator => validator(reporters, options)(val, fields))
     );

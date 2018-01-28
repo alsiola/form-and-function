@@ -30,9 +30,9 @@ export const invalidFn = (error: string): InvalidFieldResult => ({
  * Passes the validation reporters to each entry in an object
  * @param validationMap Object of field validators { [ fieldName: string ]: ValidationFunction }
  */
-export const create = <T>(
-    validationMap: Record<string, CreateValidator>,
-    options?: CreateValidatorOptions<T, MessageParams<FieldValue, any>>
+export const create = <T, U>(
+    validationMap: Record<string, CreateValidator<T, FieldValue, U>>,
+    options?: CreateValidatorOptions<U, MessageParams<FieldValue, any>>
 ): Record<string, Validator<FieldValue>> => {
     return Object.entries(validationMap).reduce(
         (out, [key, value]) => ({

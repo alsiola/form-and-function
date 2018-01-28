@@ -4,6 +4,7 @@ import {
     MessageParams,
     ValidFieldResult,
     InvalidFieldResult,
+    FieldResult,
     CovalidatedFieldResult,
     CreateValidator
 } from "./typesAndGuards";
@@ -18,7 +19,9 @@ export interface NotUndefinedMessage<T = string, U = string> {
  * Validates that a value is not undefined or zero-length
  * @param msg Error messages when invalid
  */
-export const required = <T>(msg?: NotUndefinedMessage<T>): CreateValidator => (
+export const required = <T, U>(
+    msg?: NotUndefinedMessage<T>
+): CreateValidator<FieldResult, U, T, MessageParams<U, {}>> => (
     { valid, invalid },
     options
 ) => value => {

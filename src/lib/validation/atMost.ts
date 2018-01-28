@@ -4,6 +4,7 @@ import {
     MessageParams,
     ValidFieldResult,
     InvalidFieldResult,
+    FieldResult,
     CovalidatedFieldResult,
     CreateValidator
 } from "./typesAndGuards";
@@ -19,13 +20,18 @@ export interface AtMostParams {
 
 /**
  * Validates that a value is at most {chars} long
+ * T is type of formatter result
+ * U is type of validation result
  * @param chars Maximum number of characters
  * @param msg Error messages when invalid
  */
-export const atMost = <T>(
+export const atMost = <T, U>(
     params: AtMostParams,
-    msg?: AtMostMessages<T>
-): CreateValidator => ({ valid, invalid }, formatter) => value => {
+    msg?: AtMostMessages<T, U>
+): CreateValidator<FieldResult, U, T, AtMostParams> => (
+    { valid, invalid },
+    formatter
+) => value => {
     if (!value) {
         return valid();
     }

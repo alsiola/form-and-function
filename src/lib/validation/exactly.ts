@@ -3,6 +3,7 @@ import {
     Reporters,
     ValidFieldResult,
     InvalidFieldResult,
+    FieldResult,
     CovalidatedFieldResult,
     CreateValidator
 } from "./typesAndGuards";
@@ -26,7 +27,10 @@ export interface ExactlyParams<T> {
 export const exactly = <T, U>(
     params: ExactlyParams<U>,
     msg?: ExactlyMessages<T, string, U>
-): CreateValidator => ({ valid, invalid }, options) => (value, fields) => {
+): CreateValidator<FieldResult, U, T, ExactlyParams<U>> => (
+    { valid, invalid },
+    options
+) => (value, fields) => {
     const format = useFormatter(msg, { ...params, value }, options);
 
     if (((value as any) as U) === params.value) {

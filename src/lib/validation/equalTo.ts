@@ -4,6 +4,7 @@ import {
     MessageParams,
     ValidFieldResult,
     InvalidFieldResult,
+    FieldResult,
     CovalidatedFieldResult,
     CreateValidator
 } from "./typesAndGuards";
@@ -20,18 +21,22 @@ export interface EqualToParams {
  * @param params The field to match
  * @param msg Error messages when invalid
  */
-export const equalTo = <T>(
+export const equalTo = <T, U, V>(
     params: EqualToParams,
     msg?: MatchesMessages<T, string>
-): CreateValidator => ({ valid, invalid }, options) => (
-    value,
-    fields: FieldMap
-) => {
+): CreateValidator<FieldResult, U, V, EqualToParams> => (
+    { valid, invalid },
+    options
+) => (value, fields) => {
     const format = useFormatter(msg, { ...params, value }, options);
 
-    if (value === fields[params.field].value) {
-        return valid();
-    } else {
+    if (
+        !fields ||
+        !fields[params.field] ||
+        value !== fields[params.field].value
+    ) {
         return invalid(format("different", `Must match ${params.field}`));
     }
+
+    return valid();
 };

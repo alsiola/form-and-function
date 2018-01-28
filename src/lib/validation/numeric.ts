@@ -6,6 +6,7 @@ import {
     CreateValidator,
     ValidFieldResult,
     InvalidFieldResult,
+    FieldResult,
     CovalidatedFieldResult
 } from "./typesAndGuards";
 import { Formatter, useFormatter } from "./formatter";
@@ -19,7 +20,9 @@ export interface NumericMessages<T = string, U = string>
  * Validates that a value is only numbers
  * @param msg Error messages when invalid
  */
-export const numeric = <T>(msg?: NumericMessages<T>): CreateValidator => (
+export const numeric = <T, U>(
+    msg?: NumericMessages<T>
+): CreateValidator<FieldResult, U, T, MessageParams<U, {}>> => (
     { valid, invalid },
     options
 ) => value => {

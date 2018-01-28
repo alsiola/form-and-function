@@ -51,29 +51,37 @@ export type Validator<T, U = ValidationResult> = (
     fields?: FieldMap
 ) => U;
 
-export interface CreateValidatorOptions<T, V> {
-    formatter?: Formatter<T, V>;
+/**
+ * Options that can be passed to validator.create
+ * T is type of formatter input
+ * U is type of params
+ */
+export interface CreateValidatorOptions<T, U> {
+    formatter?: Formatter<T, U>;
 }
 
 /**
  * A function that takes reporters and optionally a formatter and applies them to a ValidatorFn
- * T is type of field value
- * U is type of formatter result
- * W is type of validation result
+ * T is type of validation result
+ * U is type of field value
+ * V is type of formatter input
+ * W is type of validator params
  */
 export type CreateValidator<
-    W = ValidationResult,
-    T = FieldValue | undefined,
-    U = any,
-    V = any
+    T = ValidationResult,
+    U = FieldValue | undefined,
+    V = any,
+    W = any
 > = (
     reporters: Reporters,
-    options?: CreateValidatorOptions<U, V>
-) => Validator<T, W>;
+    options?: CreateValidatorOptions<V, W>
+) => Validator<U, T>;
 
 /**
  * Takes params and applies them to a ValidationFnWithReporters
  * params will be more specifically typed by individual validators
+ * T is type of field value
+ * U is type of validation result
  */
 export type CreateParameterizedValidator<T, U> = (
     ...params: any[]
@@ -81,6 +89,8 @@ export type CreateParameterizedValidator<T, U> = (
 
 /**
  * Combined type of value and params passed to a formatter
+ * T is type of field value
+ * U is type of validator params
  */
 export type MessageParams<T = FieldValue, U = any> = U & {
     value: T;

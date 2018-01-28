@@ -3,6 +3,7 @@ import {
     Reporters,
     ValidFieldResult,
     InvalidFieldResult,
+    FieldResult,
     CovalidatedFieldResult,
     CreateValidator
 } from "./typesAndGuards";
@@ -21,17 +22,20 @@ export interface MatchesMessages<T = string, U = string> {
  * @param params The RegExp against which to test the value
  * @param msg Error messages when invalid
  */
-export const matches = <T>(
+export const matches = <T, U>(
     params: MatchesParams,
     msg?: MatchesMessages<T>
-): CreateValidator => ({ valid, invalid }, options) => (value: string) => {
+): CreateValidator<FieldResult, U, T, MatchesParams> => (
+    { valid, invalid },
+    options
+) => value => {
     if (!value) {
         return valid();
     }
 
     const format = useFormatter(msg, { ...params, value }, options);
 
-    return params.regex.test(value)
+    return params.regex.test((value || "").toString())
         ? valid()
         : invalid(format("different", `Must match pattern`));
 };
