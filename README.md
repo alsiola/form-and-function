@@ -154,9 +154,7 @@ export const YourApp = () => (
 
 ### Validation
 
-Validation follows a single route - a validators function is passed to the `Form` component, which should return entries
-for any field that requires validation. This function is called with two "reporters" - `valid` and `invalid` - which
-should be called by each individual field's validator depending on the validity of the field. `valid` takes
+Validation follows a single route - a validators function is passed to the `Form` component, which should return an object with keys for any field that requires validation. This function is called with two "reporters" - `valid` and `invalid` - which should be called by each individual field's validator depending on the validity of the field. `valid` takes
 no arguments, and `invalid` should be called with a string describing the validation error.
 
 A convenience function `validators.create` is provided, which will pass `valid` and `invalid` to each entry in
@@ -220,7 +218,7 @@ They can be used as follows:
 />
 ```
 
-#### matches
+#### equalTo
 
 Ensure that `passwordConfirm` field is the same as `password` field.
 
@@ -252,17 +250,6 @@ Is the entered value alphabetic only
 <Form
     validators={validation.create({
         repositoryName: validation.matches({ regex: /^[a-zA-Z]+$/ })
-    })}
-/>
-```
-
-#### equalTo
-
-```js
-<Form
-    validators={validation.create({
-        password: validation.atLeast({ chars: 5 }),
-        confirm: validation.equalTo({ field: "password" })
     })}
 />
 ```
