@@ -10,7 +10,7 @@ import { FieldValue } from "./Form";
  * to the Field component.  T is the type of the render components
  * own props, that will be provided via Fields renderProps prop
  */
-export interface InjectedFieldProps<T extends object | void> {
+export interface InjectedFieldProps<T extends object | void = {}> {
     meta: {
         valid: boolean;
         error?: string;
@@ -24,6 +24,7 @@ export interface InjectedFieldProps<T extends object | void> {
         onFocus: EventHandler<SyntheticEvent<HTMLInputElement>>;
         onBlur: EventHandler<SyntheticEvent<HTMLInputElement>>;
         value: FieldValue | undefined;
+        name: string;
     };
     ownProps: T;
 }
@@ -231,7 +232,8 @@ export const makeField = (
                     onChange: this.handleChange,
                     onFocus: this.handleFocus,
                     onBlur: this.handleBlur,
-                    value
+                    value,
+                    name
                 },
                 meta: {
                     valid,

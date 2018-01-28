@@ -13,7 +13,7 @@ import {
     InvalidFieldResult
 } from "./validation/index";
 
-export type FieldValue = string | boolean | number;
+export type FieldValue = string | number;
 
 export type FieldValueMap = Record<string, FieldValue>;
 export type FieldMap = Record<string, FieldRecord>;
@@ -52,7 +52,10 @@ export interface InjectedFormProps<
 /**
  * Props that can be passed to Form
  */
-export interface FormProps<T extends object | void, U extends object | void> {
+export interface FormProps<
+    T extends object | void = {},
+    U extends object | void = {}
+> {
     name: string;
     render: React.SFC<InjectedFormProps<T, U>>;
     validators?: Record<string, Validator<FieldValue>>;
