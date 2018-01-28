@@ -13,11 +13,11 @@ import { FieldValue } from "../Form";
 import { Formatter } from "./formatter";
 
 /**
- * Combines validators so that all must be valid
+ * Combines validators so that at least one must be valid
  * @param validators Validators to combine
  * @param combiner How to combine error messages
  */
-export const all = <T, U>(
+export const any = <T, U>(
     validators: Array<CreateValidator<T, U>>,
     combiner?: (errors: string[]) => string
 ) => (
@@ -28,13 +28,11 @@ export const all = <T, U>(
         validators.map(validator => validator(reporters, formatter)(val))
     );
 
-    if (results.every(isValidResult)) {
+    if (results.some(isValidResult)) {
         return reporters.valid();
     }
 
     const errors = results.filter(isInvalidResult).map(r => r.error);
 
-    return reporters.invalid(
-        combiner ? combiner(errors) : errors.join(" and ")
-    );
+    return reporters.invalid(combiner ? combiner(errors) : errors.join(" or "));
 };
