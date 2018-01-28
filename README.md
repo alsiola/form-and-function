@@ -292,9 +292,9 @@ value and the validator params, e.g. for `validation.atLeast`:
 
 #### Combining Validators
 
-The inbuilt validators can be combined to validate on multiple conditions. As an example, we might want to
-check if a field is numeric AND more than 5 characters. This is achieved with `validation.all`, which we can pass
-an array of validators.
+The inbuilt validators can be combined to validate on multiple conditions. `validation.all` ensures that all of an array of validators pass, `validation.any` ensures that at least one of a collection of validators pass.
+
+As an example, we might want to check if a field is numeric AND more than 5 characters.
 
 ```js
 <Form
@@ -377,10 +377,19 @@ Of course, we want to give feedback to our users on both fields. We can do this 
 Although the provided validators cover a lot of sitations, undoubtedly at some point you will need to create your own. This is relatively simple. Validators must match the signature:
 
 ```js
-({ valid, invalid }) => value => { valid: true } | { valid: false; error: string }
+interface ValidResult {
+    valid: true;
+}
+
+interface InvalidResult {
+    valid: false;
+    error: string;
+}
+
+({ valid, invalid }) => value => ValidResult | InvalidResult | Promise<ValidResult | InvalidResult>
 ```
 
-`valid` and `invalid` are functions that will generate appropriate results - if the value is valid then return `valid()`, if the value is invalid return `invalid("reason for invalidity")`.
+`valid` and `invalid` are functions that will generate appropriate results - if the value is valid then return `valid()`, if the value is invalid return `invalid("reason for invalidity")`. Asynchronous functions are fine, just return a Promise that will resolve to a validation result.
 
 It's much easier to look at some example code, so let's make a validator that verifies that the provided value is an odd number of characters:
 
