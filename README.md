@@ -426,7 +426,7 @@ be translated. The validators above are all usable with an i18n library, such as
 
 These examples assume that your application has been set up with react-intl, and you are somewhat familiar with its concepts.
 
-The `validation.create` function above has an optional second argument - a formatter. This formatter has the signature:
+The `validation.create` function above has an optional second argument - an `options` object, which includes a formatter. This formatter has the signature:
 
 `type Formatter<T> = (x: T, params?: Record<string, any>) => string;`
 
@@ -474,7 +474,9 @@ const messages = {
                 nonNumeric: messages.nonNumeric
             })
         },
-        this.props.intl.formatMessage
+        {
+            formatter: this.props.intl.formatMessage
+        }
     )}
 />;
 ```
@@ -488,7 +490,9 @@ If, as above, we name our messages using the same keys as the form validation me
             firstName: validation.atLeast({ chars: 3 }, messages),
             age: validation.numeric(messages)
         },
-        this.props.intl.formatMessage
+        {
+            formatter: this.props.intl.formatMessage
+        }
     )}
 />
 ```
