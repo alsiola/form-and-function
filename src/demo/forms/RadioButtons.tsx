@@ -1,30 +1,7 @@
 import * as React from "react";
 import { Form, InjectedFormProps, InjectedFieldProps } from "../../lib";
-import { Form as SURForm, Header, Label, Divider } from "semantic-ui-react";
-
-export interface PrettyField {
-    name: string;
-    label: string;
-    hint: string;
-}
-
-export interface PrettyFormProps {
-    fields: PrettyField[];
-    title: string;
-    submitLabel?: string;
-    resetLabel?: string;
-}
-
-export const RadioButton: React.SFC<
-    InjectedFieldProps<{ value: string; title: string }>
-> = ({ input, ownProps: { value, title } }) => (
-    <>
-        <Label htmlFor={value} pointing="right">
-            {title}
-        </Label>
-        <input {...input} id={value} value={value} type="radio" />
-    </>
-);
+import { Form as SURForm, Header, Radio } from "semantic-ui-react";
+import { PrettyRadio } from "../PrettytRadio";
 
 export const RenderRadioForm: React.SFC<
     InjectedFormProps<{ title: string }, { value: string; title: string }>
@@ -39,19 +16,17 @@ export const RenderRadioForm: React.SFC<
         <Header as="h2">{title}</Header>
         <Field
             name="radios"
-            render={RadioButton}
+            render={PrettyRadio}
             renderProps={{ value: "one", title: "One" }}
         />
-        <Divider />
         <Field
             name="radios"
-            render={RadioButton}
+            render={PrettyRadio}
             renderProps={{ value: "two", title: "Two" }}
         />
-        <Divider />
         <Field
             name="radios"
-            render={RadioButton}
+            render={PrettyRadio}
             renderProps={{ value: "three", title: "Three" }}
         />
     </SURForm>
