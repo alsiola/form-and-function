@@ -97,17 +97,6 @@ export class Form<
         this.stateEngine =
             props.stateEngine ||
             componentStateEngine(this, {
-                // fields: Object.entries(props.initialValues).reduce(
-                //     (out, [field, value]) => ({
-                //         ...out,
-                //         [field]: {
-                //             value,
-                //             meta: {
-                //                 validation: this.validate(field, value)
-                //             }
-                //         }
-                //     })
-                // ) as any,
                 fields: {},
                 submitted: false,
                 meta: {

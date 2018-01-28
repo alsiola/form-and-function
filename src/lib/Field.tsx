@@ -88,21 +88,25 @@ export const makeField = (
          */
         constructor(props: FieldProps<T>) {
             super(props);
+
+            if (!resetState) {
+                return;
+            }
+
             const initialValue = formActions.getInitialValue(props.name);
 
             // Setup initial state with validation as true
-            resetState &&
-                this.updateState({
-                    meta: {
-                        touched: false,
-                        active: false,
-                        validation: {
-                            valid: true
-                        },
-                        isValidating: false
+            this.updateState({
+                meta: {
+                    touched: false,
+                    active: false,
+                    validation: {
+                        valid: true
                     },
-                    value: initialValue
-                });
+                    isValidating: false
+                },
+                value: initialValue
+            });
 
             // Easy way to trigger validation of initialValue
             formActions.onChange(props.name, initialValue);
