@@ -1,9 +1,9 @@
 import * as React from "react";
-import { EventHandler, SyntheticEvent } from "react";
 import { FormState } from "./Form";
 import { StateEngine } from "./stateEngine";
 import { FieldResult, isInvalidResult } from "./validation/index";
 import { FieldValue } from "./Form";
+import { SyntheticEvent } from "react";
 
 /**
  * These props are provided to the component provided as renderer
@@ -20,9 +20,9 @@ export interface InjectedFieldProps<T extends object | void = {}> {
         isValidating: boolean;
     };
     input: {
-        onChange: EventHandler<SyntheticEvent<HTMLInputElement>>;
-        onFocus: EventHandler<SyntheticEvent<HTMLInputElement>>;
-        onBlur: EventHandler<SyntheticEvent<HTMLInputElement>>;
+        onChange: FieldEventHandler;
+        onFocus: FieldEventHandler;
+        onBlur: FieldEventHandler;
         value: FieldValue | undefined;
         name: string;
     };
@@ -39,6 +39,15 @@ export interface FieldMeta {
     isValidating: boolean;
 }
 
+export interface SetValue {
+    value?: FieldValue;
+}
+
+export type FieldEventHandler = (
+    e: SyntheticEvent<HTMLInputElement>,
+    setValue?: SetValue
+) => void;
+
 /**
  * Props passed to the injected Field component when it is used
  */
@@ -46,9 +55,9 @@ export interface FieldProps<T extends object | void = void> {
     name: string;
     renderProps?: T;
     render: React.SFC<InjectedFieldProps<T>>;
-    onChange?: EventHandler<SyntheticEvent<HTMLInputElement>>;
-    onFocus?: EventHandler<SyntheticEvent<HTMLInputElement>>;
-    onBlur?: EventHandler<SyntheticEvent<HTMLInputElement>>;
+    onChange?: FieldEventHandler;
+    onFocus?: FieldEventHandler;
+    onBlur?: FieldEventHandler;
 }
 
 export interface FieldRecordAny<T = FieldMeta | Partial<FieldMeta>> {
@@ -189,14 +198,17 @@ export const makeField = (
          * ensures that we immediately update the value even if validtion takes
          * some time. Returned promise is not currently used.
          */
-        handleChange = (e: SyntheticEvent<any>) => {
+        handleChange = (e: SyntheticEvent<any>, setValue?: SetValue) => {
             // Pulled into a variable so we don't lose this when the event is disposed
             const { value } = e.currentTarget;
             const { onChange } = this.props;
 
-            onChange && onChange(e);
+            onChange && onChange(e, setValue);
 
-            formActions.onChange(this.props.name, value);
+            formActions.onChange(
+                this.props.name,
+                (setValue && setValue.value) || value
+            );
         };
 
         render() {
