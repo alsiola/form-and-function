@@ -3,7 +3,9 @@ import {
     Reporters,
     MessageParams,
     ValidFieldResult,
-    InvalidFieldResult
+    InvalidFieldResult,
+    CovalidatedFieldResult,
+    CreateValidator
 } from "./typesAndGuards";
 import { Formatter, useFormatter } from "./formatter";
 
@@ -20,17 +22,17 @@ export interface AtMostParams {
  * @param chars Maximum number of characters
  * @param msg Error messages when invalid
  */
-export const atMost = <T>(params: AtMostParams, msg?: AtMostMessages<T>) => (
-    { valid, invalid }: Reporters,
-    formatter?: Formatter<T, MessageParams<AtMostParams>>
-) => (value: string) => {
+export const atMost = <T>(
+    params: AtMostParams,
+    msg?: AtMostMessages<T>
+): CreateValidator => ({ valid, invalid }, formatter) => value => {
     if (!value) {
         return valid();
     }
 
     const format = useFormatter(msg, { ...params, value }, formatter);
 
-    return value.length <= params.chars
+    return value.toString().length <= params.chars
         ? valid()
         : invalid(
               format(

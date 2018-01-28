@@ -3,7 +3,9 @@ import {
     Reporters,
     MessageParams,
     ValidFieldResult,
-    InvalidFieldResult
+    InvalidFieldResult,
+    CovalidatedFieldResult,
+    CreateValidator
 } from "./typesAndGuards";
 import { Formatter, useFormatter } from "./formatter";
 import { FieldMap } from "../Form";
@@ -21,11 +23,11 @@ export interface EqualToParams {
 export const equalTo = <T>(
     params: EqualToParams,
     msg?: MatchesMessages<T, string>
-) => (
-    { valid, invalid }: Reporters,
-    formatter?: Formatter<T, MessageParams<EqualToParams>>
-) => (value: string, fields: FieldMap) => {
-    const format = useFormatter(msg, { ...params, value }, formatter);
+): CreateValidator => ({ valid, invalid }, options) => (
+    value,
+    fields: FieldMap
+) => {
+    const format = useFormatter(msg, { ...params, value }, options);
 
     if (value === fields[params.field].value) {
         return valid();

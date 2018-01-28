@@ -2,7 +2,9 @@ import {
     Message,
     Reporters,
     ValidFieldResult,
-    InvalidFieldResult
+    InvalidFieldResult,
+    CovalidatedFieldResult,
+    CreateValidator
 } from "./typesAndGuards";
 import { Formatter, useFormatter } from "./formatter";
 import { FieldValue, FieldMap } from "../Form";
@@ -24,13 +26,10 @@ export interface ExactlyParams<T> {
 export const exactly = <T, U>(
     params: ExactlyParams<U>,
     msg?: ExactlyMessages<T, string, U>
-) => (
-    { valid, invalid }: Reporters,
-    formatter?: Formatter<T, ExactlyParams<U>>
-) => (value: U, fields: FieldMap) => {
-    const format = useFormatter(msg, { ...params, value }, formatter);
+): CreateValidator => ({ valid, invalid }, options) => (value, fields) => {
+    const format = useFormatter(msg, { ...params, value }, options);
 
-    if (value === params.value) {
+    if (((value as any) as U) === params.value) {
         return valid();
     } else {
         return invalid(format("different", `Must be ${params.value}`));

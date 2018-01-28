@@ -4,7 +4,10 @@ import {
     Reporters,
     ValidFieldResult,
     InvalidFieldResult,
-    MessageParams
+    CovalidatedFieldResult,
+    MessageParams,
+    CreateValidator,
+    FieldResult
 } from "./typesAndGuards";
 import { Formatter, useFormatter } from "./formatter";
 
@@ -18,24 +21,21 @@ export interface AtLeastParams {
 }
 
 /**
- * Validates that a value is at least {chars} long
+ * Validates that a value is at least {chars} long Formatter<T, MessageParams<AtLeastParams>>
  * @param chars Minimum number of characters
  * @param msg Error messages when invalid
  */
 export const atLeast = <T>(
     params: AtLeastParams,
     msg?: AtLeastMessages<T, string>
-) => (
-    { valid, invalid }: Reporters,
-    formatter?: Formatter<T, MessageParams<AtLeastParams>>
-) => (value: string) => {
-    const format = useFormatter(msg, { ...params, value }, formatter);
+): CreateValidator<FieldResult> => ({ valid, invalid }, options) => value => {
+    const format = useFormatter(msg, { ...params, value }, options);
 
     if (!value) {
         return invalid(format("undef", `Please enter a value`));
     }
 
-    return value.length >= params.chars
+    return value.toString().length >= params.chars
         ? valid()
         : invalid(
               format(

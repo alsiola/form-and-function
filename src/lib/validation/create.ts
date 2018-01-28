@@ -1,9 +1,11 @@
 import {
+    CreateValidatorOptions,
     CreateValidator,
     MessageParams,
     ValidFieldResult,
     InvalidFieldResult,
-    CovalidatedFieldResult
+    CovalidatedFieldResult,
+    Validator
 } from "./typesAndGuards";
 import { Formatter } from "./formatter";
 import { FieldValue } from "../Form";
@@ -28,17 +30,14 @@ export const invalidFn = (error: string): InvalidFieldResult => ({
  * Passes the validation reporters to each entry in an object
  * @param validationMap Object of field validators { [ fieldName: string ]: ValidationFunction }
  */
-export const create = <T, U>(
+export const create = <T>(
     validationMap: Record<string, CreateValidator>,
-    formatter?: Formatter<U, MessageParams<FieldValue, any>>
-) => {
+    options?: CreateValidatorOptions<T, MessageParams<FieldValue, any>>
+): Record<string, Validator<FieldValue>> => {
     return Object.entries(validationMap).reduce(
         (out, [key, value]) => ({
             ...out,
-            [key]: value(
-                { valid: validFn, invalid: invalidFn },
-                formatter || (((x: string) => x) as any)
-            )
+            [key]: value({ valid: validFn, invalid: invalidFn }, options)
         }),
         {}
     );

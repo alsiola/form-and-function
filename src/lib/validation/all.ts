@@ -6,10 +6,13 @@ import {
     Reporters,
     ValidFieldResult,
     InvalidFieldResult,
+    CreateValidatorOptions,
+    ValidationResult,
     isValidResult,
     isInvalidResult
 } from "./typesAndGuards";
-import { FieldValue } from "../Form";
+import { FieldValue, FieldMap } from "../Form";
+import { FieldMeta, FieldRecordAny } from "../Field";
 import { Formatter } from "./formatter";
 
 /**
@@ -18,14 +21,17 @@ import { Formatter } from "./formatter";
  * @param combiner How to combine error messages
  */
 export const all = <T, U>(
-    validators: Array<CreateValidator<T, U>>,
+    validators: Array<CreateValidator<ValidationResult, T, U>>,
     combiner?: (errors: string[]) => string
 ) => (
     reporters: Reporters,
-    formatter: Formatter<U, MessageParams<FieldValue, any>>
-) => async (val: T): Promise<FieldResult | CovalidatedFieldResult> => {
+    options: CreateValidatorOptions<U, MessageParams<FieldValue, any>>
+) => async (
+    val: T,
+    fields: FieldMap
+): Promise<FieldResult | CovalidatedFieldResult> => {
     const results = await Promise.all(
-        validators.map(validator => validator(reporters, formatter)(val))
+        validators.map(validator => validator(reporters, options)(val, fields))
     );
 
     if (results.every(isValidResult)) {
