@@ -256,6 +256,17 @@ Is the entered value alphabetic only
 />
 ```
 
+#### equalTo
+
+```js
+<Form
+    validators={validation.create({
+        password: validation.atLeast({ chars: 5 }),
+        confirm: validation.equalTo({ field: "password" })
+    })}
+/>
+```
+
 #### Custom Validation Errors
 
 If customised error messages are needed, then an object of error messages can be passed to the validator. If the validator takes parameters (e.g. atLeast ), then this is the second argument. If the validation takes no parameters (e.g. required ) then it is the only argument.
