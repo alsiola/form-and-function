@@ -163,10 +163,10 @@ The `Form` component will accept the following props:
 * name (string, required) - The name of the form.
 * render (component/function, required) - Function/functional component that will render the form - passed InjectedFormProps as below
 * renderProps (object, optional) - Custom props to pass to the render component
-* validators?: (object, optional) - Form validation object - see validation
-* initialValues?: (object, optional) - Initial form values in the form `{ [fieldName]: value }`
-* onSubmit?: (function, optional) - Called on form submission with form values
-* onSubmitFailed?: (function, optional) - Called when submission fails due to validation errors, with form values
+* validators (object, optional) - Form validation object - see validation
+* initialValues (object, optional) - Initial form values in the form `{ [fieldName]: value }`
+* onSubmit (function, optional) - Called on form submission with form values
+* onSubmitFailed (function, optional) - Called when submission fails due to validation errors, with form values
 * onChange (function, optional) - Called when any form value changes, with all form values
 
 The render component you provide will receive the following props:
@@ -174,16 +174,14 @@ The render component you provide will receive the following props:
 * Field (Component) - A component to create fields
 * form (object) - Props that must be passed to a <form> element
 * values (object) - Current form values
-* meta: {
-  valid (boolean) - Is validation currently passing
-  submitted (boolean) - Has the form been submitted at any time
-  errors: (object) - Current errors for the form, { [fieldName]: { error: string }}
-  isValidating (boolean) - Is validation currently ongoing
-  };
-* actions: {
-  reset (function) - Call to reset the form to initial values and clear validation errors
-  submit: (function) - Call to submit the form
-  };
+* meta (object)
+    * valid (boolean) - Is validation currently passing
+    * submitted (boolean) - Has the form been submitted at any time
+    * errors: (object) - Current errors for the form, { [fieldName]: { error: string }}
+      isValidating (boolean) - Is validation currently ongoing
+* actions (object)
+    * reset (function) - Call to reset the form to initial values and clear validation errors
+    * submit: (function) - Call to submit the form
 * ownProps (object) - Any additional props passed via `renderProps` above
 
 ### Field
@@ -199,21 +197,19 @@ The `Field` component (as provided to the `Form` renderer), can be passed the fo
 
 The render component passed to `Field` is provided with the following props. The input prop should generally be passed directly to the underlying <input> element, i.e. <input {...input} />
 
-* meta: {
-  valid (boolean) - Does the field pass validation
-  error (string | undefined) - Current validation error
-  pristine (boolean) - True if the field has the same value as its initial value
-  touched (boolean) - Has the field has ever been focused
-  active (boolean) - Is the field currently focused
-  isValidating (boolean) - Is the field currently being validated
-  };
-* input: {
-  onChange (function) - Called with (event, value) when the field value changes
-  onFocus (function) - Called with (event, value) when the field is focused
-  onBlur (function) - Called with (event, value) when the field is blurred
-  value (string | number | undefined) - Current field value
-  name (string) - Name of the field
-  };
+* meta (object)
+    * valid (boolean) - Does the field pass validation
+    * error (string | undefined) - Current validation error
+    * pristine (boolean) - True if the field has the same value as its initial value
+    * touched (boolean) - Has the field has ever been focused
+    * active (boolean) - Is the field currently focused
+    * isValidating (boolean) - Is the field currently being validated
+* input (object)
+    * onChange (function) - Called with (event, value) when the field value changes
+    * onFocus (function) - Called with (event, value) when the field is focused
+    * onBlur (function) - Called with (event, value) when the field is blurred
+    * value (string | number | undefined) - Current field value
+    * name (string) - Name of the field
 * ownProps - Any custom props passed to `Field`s `renderProps`
 
 ### Validation
