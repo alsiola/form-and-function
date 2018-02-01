@@ -1,6 +1,6 @@
 {
     "name": "form-and-function",
-    "version": "0.1.0",
+    "version": "0.2.2",
     "main": "dist/form-and-function.cjs.js",
     "module": "dist/form-and-function.esm.js",
     "browser": "dist/form-and-function.umd.js",
@@ -8,8 +8,8 @@
     "homepage": "https://alsiola.github.io/form-and-function/",
     "dependencies": {},
     "peerDependencies": {
-        "react": "^15",
-        "react-dom": "^15"
+        "react": ">=15",
+        "react-dom": ">=15"
     },
     "devDependencies": {
         "@types/deep-equal": "^1.0.1",

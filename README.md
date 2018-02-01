@@ -42,12 +42,11 @@ Add the package to your React app using yarn or npm:
     yarn add form-and-function
 ```
 
-react and react-dom are peer dependencies listed as version >= 15.x.x as this is what I have tested. There are no
-direct dependencies.
+react and react-dom are peer dependencies listed as version >= 15.x.x as this is what I have tested. There are no direct dependencies. The current release version of form-and-function is 0.2.2
 
 ## Usage
 
-form-and-function relies upon render props, if you are unfamiliar with this concept then there is a great overview **here**.
+form-and-function relies upon render props, if you are unfamiliar with this concept then there is a great overview [here](https://reactjs.org/docs/render-props.html)
 
 There is no configuration, and no App level providers (no context was used in the making of this library!). Simply import the Form component and get to work.
 
