@@ -28,7 +28,7 @@ const makeValidators = (
         {
             field1: validation.all(
                 [
-                    // validation.atLeast({ chars: 7 }, messages),
+                    validation.atLeast({ chars: 7 }, messages),
                     validation.atMost({ chars: 2 }, messages)
                 ],
                 errors =>
@@ -37,7 +37,9 @@ const makeValidators = (
             ),
             field2: validation.numeric(messages)
         },
-        formatter
+        {
+            formatter
+        }
     );
 
 export interface BasicFormNoIntlProps {

@@ -1,5 +1,6 @@
 import {
     CreateValidator,
+    CreateValidatorOptions,
     FieldResult,
     Reporters,
     MessageParams,
@@ -13,22 +14,27 @@ import { FieldMeta, FieldRecordAny } from "../Field";
 
 /**
  * Specify that other fields should be revalidated when this field changes
+ * T is type of formatter result
+ * U is type of validation result
  * @param params Fields to covalidated
  * @param validator Validator for this field
  */
 export const covalidate = <T, U>(
     params: { fields: string[] },
-    validator: CreateValidator<T, U, any, FieldResult | Promise<FieldResult>>
-) => (
-    reporters: Reporters,
-    formatter?: Formatter<U, MessageParams<FieldValue, any>>
-) => async (val: T, fields: FieldMap): Promise<CovalidatedFieldResult> => {
-    console.log({
-        covalidate: params.fields,
-        result: await validator(reporters, formatter)(val, fields)
-    });
+    validator: CreateValidator<
+        FieldResult | Promise<FieldResult>,
+        FieldValue,
+        T,
+        U
+    >
+): CreateValidator<
+    CovalidatedFieldResult | Promise<CovalidatedFieldResult>,
+    FieldValue,
+    T,
+    U
+> => (reporters, options) => async (val, fields) => {
     return {
         covalidate: params.fields,
-        result: await validator(reporters, formatter)(val, fields)
+        result: await validator(reporters, options as any)(val, fields)
     };
 };

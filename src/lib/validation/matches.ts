@@ -2,7 +2,10 @@ import {
     Message,
     Reporters,
     ValidFieldResult,
-    InvalidFieldResult
+    InvalidFieldResult,
+    FieldResult,
+    CovalidatedFieldResult,
+    CreateValidator
 } from "./typesAndGuards";
 import { Formatter, useFormatter } from "./formatter";
 
@@ -19,17 +22,20 @@ export interface MatchesMessages<T = string, U = string> {
  * @param params The RegExp against which to test the value
  * @param msg Error messages when invalid
  */
-export const matches = <T>(params: MatchesParams, msg?: MatchesMessages<T>) => (
-    { valid, invalid }: Reporters,
-    formatter?: Formatter<T, MatchesParams>
-) => (value: string) => {
+export const matches = <T, U>(
+    params: MatchesParams,
+    msg?: MatchesMessages<T>
+): CreateValidator<FieldResult, U, T, MatchesParams> => (
+    { valid, invalid },
+    options
+) => value => {
     if (!value) {
         return valid();
     }
 
-    const format = useFormatter(msg, { ...params, value }, formatter);
+    const format = useFormatter(msg, { ...params, value }, options);
 
-    return params.regex.test(value)
+    return params.regex.test((value || "").toString())
         ? valid()
         : invalid(format("different", `Must match pattern`));
 };

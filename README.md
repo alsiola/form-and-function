@@ -15,9 +15,13 @@ Many modern applications need to be internationalized, and this can be an issue 
 
 In modern JavaScript development bundle size is always a concern - currently form-and-function weights in at just 3.54KB gzipped (14.87KB uncompressed).
 
+## Contents
+
 * [Examples](#examples)
 * [Installation](#installation)
 * [Usage](#usage)
+    * [Form](#form)
+    * [Field](#field)
     * [Validation](#validation)
         * [Built-In Validators](#built-in-validators)
         * [Custom Errors](#custom-validation-errors)
@@ -152,11 +156,65 @@ export const YourApp = () => (
 );
 ```
 
+### Form
+
+The `Form` component will accept the following props:
+
+* name (string, required) - The name of the form.
+* render (component/function, required) - Function/functional component that will render the form - passed InjectedFormProps as below
+* renderProps (object, optional) - Custom props to pass to the render component
+* validators (object, optional) - Form validation object - see validation
+* initialValues (object, optional) - Initial form values in the form `{ [fieldName]: value }`
+* onSubmit (function, optional) - Called on form submission with form values
+* onSubmitFailed (function, optional) - Called when submission fails due to validation errors, with form values
+* onChange (function, optional) - Called when any form value changes, with all form values
+
+The render component you provide will receive the following props:
+
+* Field (Component) - A component to create fields
+* form (object) - Props that must be passed to a <form> element
+* values (object) - Current form values
+* meta (object)
+    * valid (boolean) - Is validation currently passing
+    * submitted (boolean) - Has the form been submitted at any time
+    * errors: (object) - Current errors for the form, { [fieldName]: { error: string }}
+      isValidating (boolean) - Is validation currently ongoing
+* actions (object)
+    * reset (function) - Call to reset the form to initial values and clear validation errors
+    * submit: (function) - Call to submit the form
+* ownProps (object) - Any additional props passed via `renderProps` above
+
+### Field
+
+The `Field` component (as provided to the `Form` renderer), can be passed the following props:
+
+* name (string, required) - The field name
+* render (component/function, required) - Field renderer - passed InjectedFieldProps as below
+* renderProps (object, optional) - Custom props to pass to the field renderer
+* onChange (function, optional) - Called with the change event, and the field value, whenever the field value changes I.e. (e: SyntheticEvent, value: string | number | undefined) => void
+* onFocus (function, optional) - Called with the focus event, and the field value, whenever the field value is focused
+* onBlur (function, optional) - Called with the blur event, and the field value, whenever the field value is blurred
+
+The render component passed to `Field` is provided with the following props. The input prop should generally be passed directly to the underlying <input> element, i.e. <input {...input} />
+
+* meta (object)
+    * valid (boolean) - Does the field pass validation
+    * error (string | undefined) - Current validation error
+    * pristine (boolean) - True if the field has the same value as its initial value
+    * touched (boolean) - Has the field has ever been focused
+    * active (boolean) - Is the field currently focused
+    * isValidating (boolean) - Is the field currently being validated
+* input (object)
+    * onChange (function) - Called with (event, value) when the field value changes
+    * onFocus (function) - Called with (event, value) when the field is focused
+    * onBlur (function) - Called with (event, value) when the field is blurred
+    * value (string | number | undefined) - Current field value
+    * name (string) - Name of the field
+* ownProps - Any custom props passed to `Field`s `renderProps`
+
 ### Validation
 
-Validation follows a single route - a validators function is passed to the `Form` component, which should return entries
-for any field that requires validation. This function is called with two "reporters" - `valid` and `invalid` - which
-should be called by each individual field's validator depending on the validity of the field. `valid` takes
+Validation follows a single route - a validators function is passed to the `Form` component, which should return an object with keys for any field that requires validation. This function is called with two "reporters" - `valid` and `invalid` - which should be called by each individual field's validator depending on the validity of the field. `valid` takes
 no arguments, and `invalid` should be called with a string describing the validation error.
 
 A convenience function `validators.create` is provided, which will pass `valid` and `invalid` to each entry in
@@ -220,7 +278,7 @@ They can be used as follows:
 />
 ```
 
-#### matches
+#### equalTo
 
 Ensure that `passwordConfirm` field is the same as `password` field.
 
@@ -292,9 +350,9 @@ value and the validator params, e.g. for `validation.atLeast`:
 
 #### Combining Validators
 
-The inbuilt validators can be combined to validate on multiple conditions. As an example, we might want to
-check if a field is numeric AND more than 5 characters. This is achieved with `validation.all`, which we can pass
-an array of validators.
+The inbuilt validators can be combined to validate on multiple conditions. `validation.all` ensures that all of an array of validators pass, `validation.any` ensures that at least one of a collection of validators pass.
+
+As an example, we might want to check if a field is numeric AND more than 5 characters.
 
 ```js
 <Form
@@ -377,10 +435,19 @@ Of course, we want to give feedback to our users on both fields. We can do this 
 Although the provided validators cover a lot of sitations, undoubtedly at some point you will need to create your own. This is relatively simple. Validators must match the signature:
 
 ```js
-({ valid, invalid }) => value => { valid: true } | { valid: false; error: string }
+interface ValidResult {
+    valid: true;
+}
+
+interface InvalidResult {
+    valid: false;
+    error: string;
+}
+
+({ valid, invalid }) => value => ValidResult | InvalidResult | Promise<ValidResult | InvalidResult>
 ```
 
-`valid` and `invalid` are functions that will generate appropriate results - if the value is valid then return `valid()`, if the value is invalid return `invalid("reason for invalidity")`.
+`valid` and `invalid` are functions that will generate appropriate results - if the value is valid then return `valid()`, if the value is invalid return `invalid("reason for invalidity")`. Asynchronous functions are fine, just return a Promise that will resolve to a validation result.
 
 It's much easier to look at some example code, so let's make a validator that verifies that the provided value is an odd number of characters:
 
@@ -417,7 +484,7 @@ be translated. The validators above are all usable with an i18n library, such as
 
 These examples assume that your application has been set up with react-intl, and you are somewhat familiar with its concepts.
 
-The `validation.create` function above has an optional second argument - a formatter. This formatter has the signature:
+The `validation.create` function above has an optional second argument - an `options` object, which includes a formatter. This formatter has the signature:
 
 `type Formatter<T> = (x: T, params?: Record<string, any>) => string;`
 
@@ -465,7 +532,9 @@ const messages = {
                 nonNumeric: messages.nonNumeric
             })
         },
-        this.props.intl.formatMessage
+        {
+            formatter: this.props.intl.formatMessage
+        }
     )}
 />;
 ```
@@ -479,7 +548,9 @@ If, as above, we name our messages using the same keys as the form validation me
             firstName: validation.atLeast({ chars: 3 }, messages),
             age: validation.numeric(messages)
         },
-        this.props.intl.formatMessage
+        {
+            formatter: this.props.intl.formatMessage
+        }
     )}
 />
 ```

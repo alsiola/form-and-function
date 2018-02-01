@@ -1,5 +1,10 @@
-import { Message } from "./typesAndGuards";
+import { Message, CreateValidatorOptions } from "./typesAndGuards";
 
+/**
+ * String formatter (react-intl compat)
+ * T is type of validator output
+ * U is type of validator params
+ */
 export type Formatter<T, U> = (x: T, params?: U) => string;
 
 /**
@@ -13,7 +18,7 @@ export type Formatter<T, U> = (x: T, params?: U) => string;
 export const useFormatter = <T, U, V, W extends string>(
     msg: Partial<Record<W, Message<U, T, V>>> | undefined,
     args: V,
-    formatter?: Formatter<T, V>
+    options?: CreateValidatorOptions<T, V>
 ) => (messageName: W, defaultMsg: string): string => {
     const message =
         msg && msg[messageName]
@@ -21,5 +26,7 @@ export const useFormatter = <T, U, V, W extends string>(
               ? (msg[messageName] as any)(args)
               : msg[messageName]
             : defaultMsg;
-    return formatter ? formatter(message, args) : message;
+    return options && options.formatter
+        ? options.formatter(message, args)
+        : message;
 };

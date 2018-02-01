@@ -1,16 +1,16 @@
 import * as React from "react";
-import { EventHandler, SyntheticEvent } from "react";
 import { FormState } from "./Form";
 import { StateEngine } from "./stateEngine";
 import { FieldResult, isInvalidResult } from "./validation/index";
 import { FieldValue } from "./Form";
+import { SyntheticEvent } from "react";
 
 /**
  * These props are provided to the component provided as renderer
  * to the Field component.  T is the type of the render components
  * own props, that will be provided via Fields renderProps prop
  */
-export interface InjectedFieldProps<T extends object | void> {
+export interface InjectedFieldProps<T extends object | void = {}> {
     meta: {
         valid: boolean;
         error?: string;
@@ -20,10 +20,11 @@ export interface InjectedFieldProps<T extends object | void> {
         isValidating: boolean;
     };
     input: {
-        onChange: EventHandler<SyntheticEvent<HTMLInputElement>>;
-        onFocus: EventHandler<SyntheticEvent<HTMLInputElement>>;
-        onBlur: EventHandler<SyntheticEvent<HTMLInputElement>>;
+        onChange: FieldEventHandler;
+        onFocus: FieldEventHandler;
+        onBlur: FieldEventHandler;
         value: FieldValue | undefined;
+        name: string;
     };
     ownProps: T;
 }
@@ -38,6 +39,15 @@ export interface FieldMeta {
     isValidating: boolean;
 }
 
+export interface SetValue {
+    value?: FieldValue;
+}
+
+export type FieldEventHandler = (
+    e: SyntheticEvent<HTMLInputElement>,
+    setValue?: SetValue
+) => void;
+
 /**
  * Props passed to the injected Field component when it is used
  */
@@ -45,9 +55,9 @@ export interface FieldProps<T extends object | void = void> {
     name: string;
     renderProps?: T;
     render: React.SFC<InjectedFieldProps<T>>;
-    onChange?: EventHandler<SyntheticEvent<HTMLInputElement>>;
-    onFocus?: EventHandler<SyntheticEvent<HTMLInputElement>>;
-    onBlur?: EventHandler<SyntheticEvent<HTMLInputElement>>;
+    onChange?: FieldEventHandler;
+    onFocus?: FieldEventHandler;
+    onBlur?: FieldEventHandler;
 }
 
 export interface FieldRecordAny<T = FieldMeta | Partial<FieldMeta>> {
@@ -88,21 +98,25 @@ export const makeField = (
          */
         constructor(props: FieldProps<T>) {
             super(props);
+
+            if (!resetState) {
+                return;
+            }
+
             const initialValue = formActions.getInitialValue(props.name);
 
             // Setup initial state with validation as true
-            resetState &&
-                this.updateState({
-                    meta: {
-                        touched: false,
-                        active: false,
-                        validation: {
-                            valid: true
-                        },
-                        isValidating: false
+            this.updateState({
+                meta: {
+                    touched: false,
+                    active: false,
+                    validation: {
+                        valid: true
                     },
-                    value: initialValue
-                });
+                    isValidating: false
+                },
+                value: initialValue
+            });
 
             // Easy way to trigger validation of initialValue
             formActions.onChange(props.name, initialValue);
@@ -184,14 +198,17 @@ export const makeField = (
          * ensures that we immediately update the value even if validtion takes
          * some time. Returned promise is not currently used.
          */
-        handleChange = (e: SyntheticEvent<any>) => {
+        handleChange = (e: SyntheticEvent<any>, setValue?: SetValue) => {
             // Pulled into a variable so we don't lose this when the event is disposed
             const { value } = e.currentTarget;
             const { onChange } = this.props;
 
-            onChange && onChange(e);
+            onChange && onChange(e, setValue);
 
-            formActions.onChange(this.props.name, value);
+            formActions.onChange(
+                this.props.name,
+                (setValue && setValue.value) || value
+            );
         };
 
         render() {
@@ -227,7 +244,8 @@ export const makeField = (
                     onChange: this.handleChange,
                     onFocus: this.handleFocus,
                     onBlur: this.handleBlur,
-                    value
+                    value,
+                    name
                 },
                 meta: {
                     valid,

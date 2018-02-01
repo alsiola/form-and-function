@@ -1,4 +1,5 @@
 export * from "./all";
+export * from "./any";
 export * from "./atLeast";
 export * from "./atMost";
 export * from "./covalidate";

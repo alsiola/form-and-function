@@ -3,10 +3,13 @@ import {
     Reporters,
     MessageParams,
     ValidFieldResult,
-    InvalidFieldResult
+    InvalidFieldResult,
+    FieldResult,
+    CovalidatedFieldResult,
+    CreateValidator
 } from "./typesAndGuards";
 import { Formatter, useFormatter } from "./formatter";
-import { FieldValue } from "../index";
+import { FieldValue } from "../Form";
 
 export interface NotUndefinedMessage<T = string, U = string> {
     undef?: Message<T, void, U>;
@@ -16,13 +19,13 @@ export interface NotUndefinedMessage<T = string, U = string> {
  * Validates that a value is not undefined or zero-length
  * @param msg Error messages when invalid
  */
-export const required = <T>(msg?: NotUndefinedMessage<T>) => (
-    { valid, invalid }: Reporters,
-    formatter: Formatter<T, MessageParams<{}>>
-) => (value: FieldValue | undefined) => {
-    const format = useFormatter(msg, { value }, formatter);
-
-    console.log({ valueRequired: value });
+export const required = <T, U>(
+    msg?: NotUndefinedMessage<T>
+): CreateValidator<FieldResult, U, T, MessageParams<U, {}>> => (
+    { valid, invalid },
+    options
+) => value => {
+    const format = useFormatter(msg, { value }, options);
 
     return typeof value !== "undefined" && value.toString().length > 0
         ? valid()

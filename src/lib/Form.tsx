@@ -13,13 +13,13 @@ import {
     InvalidFieldResult
 } from "./validation/index";
 
-export type FieldValue = string | boolean | number;
+export type FieldValue = string | number;
 
 export type FieldValueMap = Record<string, FieldValue>;
 export type FieldMap = Record<string, FieldRecord>;
 
-export type EventHandler = (values: FieldMap) => void;
-export type MaybeEventHandler = EventHandler | undefined;
+export type FormEventHandler = (values: FieldMap) => void;
+export type MaybeFormEventHandler = FormEventHandler | undefined;
 
 /**
  * Props supplied to the render component passed to Form
@@ -52,14 +52,17 @@ export interface InjectedFormProps<
 /**
  * Props that can be passed to Form
  */
-export interface FormProps<T extends object | void, U extends object | void> {
+export interface FormProps<
+    T extends object | void = {},
+    U extends object | void = {}
+> {
     name: string;
     render: React.SFC<InjectedFormProps<T, U>>;
     validators?: Record<string, Validator<FieldValue>>;
     initialValues?: FieldValueMap;
-    onSubmit?: EventHandler;
-    onSubmitFailed?: EventHandler;
-    onChange?: EventHandler;
+    onSubmit?: FormEventHandler;
+    onSubmitFailed?: FormEventHandler;
+    onChange?: FormEventHandler;
     renderProps?: T;
     stateEngine?: StateEngine<FormState>;
 }
@@ -97,17 +100,6 @@ export class Form<
         this.stateEngine =
             props.stateEngine ||
             componentStateEngine(this, {
-                // fields: Object.entries(props.initialValues).reduce(
-                //     (out, [field, value]) => ({
-                //         ...out,
-                //         [field]: {
-                //             value,
-                //             meta: {
-                //                 validation: this.validate(field, value)
-                //             }
-                //         }
-                //     })
-                // ) as any,
                 fields: {},
                 submitted: false,
                 meta: {
@@ -294,7 +286,7 @@ export class Form<
             }
         });
 
-        (this.props.onChange as EventHandler)(
+        (this.props.onChange as FormEventHandler)(
             this.stateEngine.select(s => s.fields)
         );
     };
@@ -304,16 +296,16 @@ export class Form<
      * depending on current validation status
      */
     private handleSubmit = (
-        onSubmit: MaybeEventHandler,
-        onFailedSubmit: MaybeEventHandler,
+        onSubmit: MaybeFormEventHandler,
+        onFailedSubmit: MaybeFormEventHandler,
         valid: boolean,
         fields: FieldMap
     ) => (e?: SyntheticEvent<any>) => {
         e && e.preventDefault();
         this.stateEngine.set({ submitted: true });
         valid
-            ? (onSubmit as EventHandler)(fields)
-            : (onFailedSubmit as EventHandler)(fields);
+            ? (onSubmit as FormEventHandler)(fields)
+            : (onFailedSubmit as FormEventHandler)(fields);
     };
 
     render() {
