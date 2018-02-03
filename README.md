@@ -29,6 +29,7 @@ In modern JavaScript development bundle size is always a concern - currently for
         * [Covalidating Fields](#covalidated-fields)
         * [Custom Validators](#writing-your-own-validators)
     * [Internationalization](#internationalization)
+* [State Management](#state-management)
 
 ## Examples
 
@@ -421,7 +422,7 @@ Of course, we want to give feedback to our users on both fields. We can do this 
 <Form
     validators={validation.create({
         password: validation.covalidate(
-            { fields: [ "passwordConfirm" ]}
+            { fields: ["passwordConfirm"] },
             validation.atLeast({ chars: 8 })
         ),
         passwordConfirm: validation.matches({ field: "password" })
@@ -553,3 +554,38 @@ If, as above, we name our messages using the same keys as the form validation me
     )}
 />
 ```
+
+## State Management
+
+One of the design goals was to create a library that was agnostic to the variety of state management used. I'm not certain that this is an easy target, or one that is achieved entirely, but the current attempt uses a prop on the `Form` component: `stateEngine`. This is an optional prop, and if not passed then `form-and-function` will create its own state engine that uses the internal state of the `Form` component. If supplied, this prop should be an object that fulfils the following interface:
+
+```js
+export interface StateEngine<T extends object> {
+    select: <U>(selector: (state: T) => U) => U;
+    set: <K extends keyof T>(
+        update: Pick<T, K> | ((s: T) => Pick<T, K>)
+    ) => Promise<void>;
+    get: () => T;
+}
+```
+
+Essentially, there should be a `select` function that runs the provided `selector` against the whole state, a `set` function that updates the state (with the same signature as React's `setState`, but returning a promise instead of using a callback), and a `get` function that returns the entire state.
+
+The internal component-state stateEngine that is used by default looks like this - this is a function gets passed the componentInstance and the initialState, and returns the stateEngine. Currently, if you pass a `stateEngine` prop then it doesn't get provided with these arguments - but this part of the API is not nailed down.
+
+```js
+export const componentStateEngine = (
+    componentInstance: Component<any, FormState>,
+    initialState: FormState
+): FormStateEngine => {
+    componentInstance.state = initialState;
+    return {
+        select: selector => selector(componentInstance.state),
+        set: update =>
+            new Promise(r => componentInstance.setState(update as any, r)),
+        get: () => componentInstance.state
+    };
+};
+```
+
+All state updates within `form-and-function` pass through this stateEngine, so providing an alternate will allow some external code to take over managing the entirety of the form's state. In the future the library may provided alternative stateEngines for you to use, such as a redux-connected one (if you believe form state should live in redux), or one using Apollo Client's local cache. For now, you're on your own.
