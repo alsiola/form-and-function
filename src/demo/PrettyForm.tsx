@@ -23,7 +23,7 @@ export const PrettyForm: React.SFC<
     InjectedFormProps<PrettyFormProps, PrettyFieldProps | ReversingFieldProps>
 > = ({
     form,
-    meta: { valid, errors, submitted },
+    meta: { valid, errors, submitted, isValidating },
     actions: { reset },
     ownProps: { fields, title, submitLabel = "Submit", resetLabel = "Reset" },
     Field
@@ -43,7 +43,9 @@ export const PrettyForm: React.SFC<
                 }}
             />
         ))}
-        <Button type="submit">{submitLabel}</Button>
+        <Button type="submit" disabled={isValidating}>
+            {submitLabel}
+        </Button>
         <Button type="button" onClick={reset}>
             {resetLabel}
         </Button>
