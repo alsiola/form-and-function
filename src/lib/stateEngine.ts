@@ -6,7 +6,7 @@ import { FormState } from "./Form";
  * Forms state.  The library is agnostic to the mechanism of state
  * storage.
  */
-export interface StateEngine<T> {
+export interface StateEngine<T extends object> {
     select: <U>(selector: (state: T) => U) => U;
     set: <K extends keyof T>(
         update: Pick<T, K> | ((s: T) => Pick<T, K>)
