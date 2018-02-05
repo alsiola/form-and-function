@@ -432,7 +432,7 @@ Of course, we want to give feedback to our users on both fields. We can do this 
 
 #### Writing Your Own Validators
 
-Although the provided validators cover a lot of sitations, undoubtedly at some point you will need to create your own. This is relatively simple. Validators must match the signature:
+Although the provided validators cover a lot of situations, undoubtedly at some point you will need to create your own. This is relatively simple. Validators must match the signature:
 
 ```js
 interface ValidResult {
@@ -557,7 +557,7 @@ If, as above, we name our messages using the same keys as the form validation me
 
 ## State Management
 
-One of the design goals was to create a library that was agnostic to the variety of state management used. I'm not certain that this is an easy target, or one that is achieved entirely, but the current attempt uses a prop on the `Form` component: `stateEngine`. This is an optional prop, and if not passed then `form-and-function` will create its own state engine that uses the internal state of the `Form` component. If supplied, this prop should be an object that fulfils the following interface:
+One of the design goals was to create a library that was agnostic to the variety of state management used. I'm not certain that this is an easy target, or one that is achieved entirely, but the current attempt uses a prop on the `Form` component: `stateEngine`. This is an optional prop, and if not passed then `form-and-function` will create its own state engine that uses the internal state of the `Form` component. If supplied, this prop should be an object that fulfills the following interface:
 
 ```js
 export interface StateEngine<T extends object> {
