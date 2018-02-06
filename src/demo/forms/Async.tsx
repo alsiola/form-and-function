@@ -20,9 +20,11 @@ const validators = validation.create({
             setTimeout(
                 () =>
                     r(
-                        validation.atLeast({ chars: 5 })(reporters, ((
-                            x: string
-                        ) => x) as any)(val)
+                        validation.atLeast({ chars: 5 })(
+                            reporters,
+                            validation.useFormatter,
+                            ((x: string) => x) as any
+                        )(val)
                     ),
                 1000
             )

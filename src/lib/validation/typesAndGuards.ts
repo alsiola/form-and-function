@@ -1,6 +1,6 @@
 import { FieldValue, FieldMap } from "../Form";
 import { FieldMeta, FieldRecordAny } from "../Field";
-import { Formatter } from "./formatter";
+import { Formatter, useFormatter as formatter } from "./formatter";
 
 /**
  * Produced by invalidFn to represent validation failure
@@ -74,6 +74,7 @@ export type CreateValidator<
     W = any
 > = (
     reporters: Reporters,
+    useFormatter: typeof formatter,
     options?: CreateValidatorOptions<V, W>
 ) => Validator<U, T>;
 

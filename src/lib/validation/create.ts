@@ -7,7 +7,7 @@ import {
     CovalidatedFieldResult,
     Validator
 } from "./typesAndGuards";
-import { Formatter } from "./formatter";
+import { Formatter, useFormatter } from "./formatter";
 import { FieldValue } from "../Form";
 
 /**
@@ -37,7 +37,11 @@ export const create = <T, U>(
     return Object.entries(validationMap).reduce(
         (out, [key, value]) => ({
             ...out,
-            [key]: value({ valid: validFn, invalid: invalidFn }, options)
+            [key]: value(
+                { valid: validFn, invalid: invalidFn },
+                useFormatter,
+                options
+            )
         }),
         {}
     );

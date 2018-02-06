@@ -8,7 +8,7 @@ import {
     CovalidatedFieldResult,
     CreateValidator
 } from "./typesAndGuards";
-import { Formatter, useFormatter } from "./formatter";
+import { Formatter } from "./formatter";
 import { FieldValue } from "../Form";
 
 export interface NotUndefinedMessage<T = string, U = string> {
@@ -23,6 +23,7 @@ export const required = <T, U>(
     msg?: NotUndefinedMessage<T>
 ): CreateValidator<FieldResult, U, T, MessageParams<U, {}>> => (
     { valid, invalid },
+    useFormatter,
     options
 ) => value => {
     const format = useFormatter(msg, { value }, options);

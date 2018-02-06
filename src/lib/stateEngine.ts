@@ -27,8 +27,7 @@ export const componentStateEngine = (
     componentInstance.state = initialState;
     return {
         select: selector => selector(componentInstance.state),
-        set: update =>
-            new Promise(r => componentInstance.setState(update as any, r)),
+        set: update => new Promise(r => componentInstance.setState(update, r)),
         get: () => componentInstance.state
     };
 };

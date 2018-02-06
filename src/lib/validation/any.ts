@@ -24,9 +24,14 @@ import { FieldMeta, FieldRecordAny } from "../Field";
 export const any = (
     validators: CreateValidator[],
     combiner?: (errors: string[]) => string
-): CreateValidator => (reporters, options) => async (val, fields) => {
+): CreateValidator => (reporters, formatter, options) => async (
+    val,
+    fields
+) => {
     const results = await Promise.all(
-        validators.map(validator => validator(reporters, options)(val, fields))
+        validators.map(validator =>
+            validator(reporters, formatter, options)(val, fields)
+        )
     );
 
     if (results.some(isValidResult)) {

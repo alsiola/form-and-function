@@ -25,12 +25,14 @@ import { Formatter } from "./formatter";
 export const all = (
     validators: CreateValidator[],
     combiner?: (errors: string[]) => string
-): CreateValidator => (reporters, options) => async (
+): CreateValidator => (reporters, formatter, options) => async (
     val,
     fields
 ): Promise<FieldResult | CovalidatedFieldResult> => {
     const results = await Promise.all(
-        validators.map(validator => validator(reporters, options)(val, fields))
+        validators.map(validator =>
+            validator(reporters, formatter, options)(val, fields)
+        )
     );
 
     if (results.every(isValidResult)) {

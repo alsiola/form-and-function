@@ -8,7 +8,7 @@ import {
     CovalidatedFieldResult,
     CreateValidator
 } from "./typesAndGuards";
-import { Formatter, useFormatter } from "./formatter";
+import { Formatter } from "./formatter";
 import { FieldMap } from "../Form";
 import { FieldMeta, FieldRecordAny } from "../Field";
 
@@ -26,6 +26,7 @@ export const equalTo = <T, U, V>(
     msg?: MatchesMessages<T, string>
 ): CreateValidator<FieldResult, U, V, EqualToParams> => (
     { valid, invalid },
+    useFormatter,
     options
 ) => (value, fields) => {
     const format = useFormatter(msg, { ...params, value }, options);

@@ -8,7 +8,7 @@ import {
     CovalidatedFieldResult,
     CreateValidator
 } from "./typesAndGuards";
-import { Formatter, useFormatter } from "./formatter";
+import { Formatter } from "./formatter";
 
 export interface AtMostMessages<T = string, U = string> {
     long: Message<T, AtMostParams, U>;
@@ -30,13 +30,14 @@ export const atMost = <T, U>(
     msg?: AtMostMessages<T, U>
 ): CreateValidator<FieldResult, U, T, AtMostParams> => (
     { valid, invalid },
-    formatter
+    useFormatter,
+    options
 ) => value => {
     if (!value) {
         return valid();
     }
 
-    const format = useFormatter(msg, { ...params, value }, formatter);
+    const format = useFormatter(msg, { ...params, value }, options);
 
     return value.toString().length <= params.chars
         ? valid()

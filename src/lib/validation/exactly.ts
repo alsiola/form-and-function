@@ -7,7 +7,7 @@ import {
     CovalidatedFieldResult,
     CreateValidator
 } from "./typesAndGuards";
-import { Formatter, useFormatter } from "./formatter";
+import { Formatter } from "./formatter";
 import { FieldValue, FieldMap } from "../Form";
 import { FieldMeta, FieldRecordAny } from "../Field";
 
@@ -29,6 +29,7 @@ export const exactly = <T, U>(
     msg?: ExactlyMessages<T, string, U>
 ): CreateValidator<FieldResult, U, T, ExactlyParams<U>> => (
     { valid, invalid },
+    useFormatter,
     options
 ) => (value, fields) => {
     const format = useFormatter(msg, { ...params, value }, options);

@@ -32,9 +32,9 @@ export const covalidate = <T, U>(
     FieldValue,
     T,
     U
-> => (reporters, options) => async (val, fields) => {
+> => (reporters, formatter, options) => async (val, fields) => {
     return {
         covalidate: params.fields,
-        result: await validator(reporters, options as any)(val, fields)
+        result: await validator(reporters, formatter, options)(val, fields)
     };
 };

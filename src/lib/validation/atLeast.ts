@@ -9,7 +9,7 @@ import {
     CreateValidator,
     FieldResult
 } from "./typesAndGuards";
-import { Formatter, useFormatter } from "./formatter";
+import { Formatter } from "./formatter";
 
 export interface AtLeastMessages<T = string, U = string>
     extends NotUndefinedMessage<T, U> {
@@ -32,6 +32,7 @@ export const atLeast = <T, U>(
     msg?: AtLeastMessages<T, U>
 ): CreateValidator<FieldResult, U, T, AtLeastParams> => (
     { valid, invalid },
+    useFormatter,
     options
 ) => value => {
     const format = useFormatter(msg, { ...params, value }, options);

@@ -9,7 +9,7 @@ import {
     FieldResult,
     CovalidatedFieldResult
 } from "./typesAndGuards";
-import { Formatter, useFormatter } from "./formatter";
+import { Formatter } from "./formatter";
 
 export interface NumericMessages<T = string, U = string>
     extends NotUndefinedMessage<T, U> {
@@ -24,6 +24,7 @@ export const numeric = <T, U>(
     msg?: NumericMessages<T>
 ): CreateValidator<FieldResult, U, T, MessageParams<U, {}>> => (
     { valid, invalid },
+    useFormatter,
     options
 ) => value => {
     if (typeof value === "undefined") {

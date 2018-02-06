@@ -7,7 +7,7 @@ import {
     CovalidatedFieldResult,
     CreateValidator
 } from "./typesAndGuards";
-import { Formatter, useFormatter } from "./formatter";
+import { Formatter } from "./formatter";
 
 export interface MatchesParams {
     regex: RegExp;
@@ -27,6 +27,7 @@ export const matches = <T, U>(
     msg?: MatchesMessages<T>
 ): CreateValidator<FieldResult, U, T, MatchesParams> => (
     { valid, invalid },
+    useFormatter,
     options
 ) => value => {
     if (!value) {
