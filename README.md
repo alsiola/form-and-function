@@ -165,8 +165,8 @@ The `Form` component will accept the following props:
 * renderProps (object, optional) - Custom props to pass to the render component
 * validators (object, optional) - Form validation object - see validation
 * initialValues (object, optional) - Initial form values in the form `{ [fieldName]: value }`
-* onSubmit (function, optional) - Called on form submission with form values
-* onSubmitFailed (function, optional) - Called when submission fails due to validation errors, with form values
+* onSubmit (function, optional) - Called on form submission with form values. Should return void or Promise<void>
+* onSubmitFailed (function, optional) - Called when submission fails due to validation errors, with form values. Should return void or Promise<void>
 * onChange (function, optional) - Called when any form value changes, with all form values
 
 The render component you provide will receive the following props:
@@ -178,7 +178,8 @@ The render component you provide will receive the following props:
     * valid (boolean) - Is validation currently passing
     * submitted (boolean) - Has the form been submitted at any time
     * errors: (object) - Current errors for the form, { [fieldName]: { error: string }}
-      isValidating (boolean) - Is validation currently ongoing
+    * isValidating (boolean) - Is validation currently ongoing
+    * isSubmitting (boolean) - Is submission currently ongoing
 * actions (object)
     * reset (function) - Call to reset the form to initial values and clear validation errors
     * submit: (function) - Call to submit the form
