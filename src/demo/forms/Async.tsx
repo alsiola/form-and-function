@@ -38,6 +38,7 @@ export const AsyncForm = () => (
         initialValues={initialValues}
         onSubmit={values => {
             console.log("Submitted with values", values);
+            return new Promise(r => setTimeout(r, 2000));
         }}
         onSubmitFailed={values => {
             console.log("Submission failed with values", values);
