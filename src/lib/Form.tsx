@@ -18,7 +18,7 @@ export type FieldValue = string | number;
 export type FieldValueMap = Record<string, FieldValue>;
 export type FieldMap = Record<string, FieldRecord>;
 
-export type FormEventHandler = (values: FieldMap) => void;
+export type FormEventHandler = (values: FieldMap) => void | Promise<void>;
 export type MaybeFormEventHandler = FormEventHandler | undefined;
 
 /**
@@ -41,6 +41,7 @@ export interface InjectedFormProps<
         submitted: boolean;
         errors: Record<string, InvalidFieldResult>;
         isValidating: boolean;
+        isSubmitting: boolean;
     };
     actions: {
         reset: () => void;
@@ -72,6 +73,7 @@ export interface FormState {
     submitted: boolean;
     meta: {
         validation: FieldResult;
+        isSubmitting: boolean;
     };
 }
 
@@ -105,7 +107,8 @@ export class Form<
                 meta: {
                     validation: {
                         valid: true
-                    }
+                    },
+                    isSubmitting: false
                 }
             });
         this.makeField();
@@ -182,11 +185,12 @@ export class Form<
                     this.validate(field, fields[field].value)
                 );
             } else {
-                await this.stateEngine.set({
+                await this.stateEngine.set(({ meta }) => ({
                     meta: {
+                        ...meta,
                         validation: formResult
                     }
-                });
+                }));
             }
         }
 
@@ -302,10 +306,22 @@ export class Form<
         fields: FieldMap
     ) => (e?: SyntheticEvent<any>) => {
         e && e.preventDefault();
-        this.stateEngine.set({ submitted: true });
-        valid
-            ? (onSubmit as FormEventHandler)(fields)
-            : (onFailedSubmit as FormEventHandler)(fields);
+        this.stateEngine.set(({ meta }) => ({
+            submitted: true,
+            meta: { ...meta, isSubmitting: true }
+        }));
+        Promise.resolve(
+            valid
+                ? (onSubmit as FormEventHandler)(fields)
+                : (onFailedSubmit as FormEventHandler)(fields)
+        ).then(() =>
+            this.stateEngine.set(({ meta }) => ({
+                meta: {
+                    ...meta,
+                    isSubmitting: false
+                }
+            }))
+        );
     };
 
     render() {
@@ -320,7 +336,7 @@ export class Form<
         const {
             submitted,
             fields,
-            meta: { validation }
+            meta: { validation, isSubmitting }
         } = this.stateEngine.get();
 
         const valid = this.allValid(fields);
@@ -363,7 +379,8 @@ export class Form<
                 valid,
                 submitted,
                 errors: validationResult,
-                isValidating
+                isValidating,
+                isSubmitting
             },
             Field: this.Field,
             values: fields,
