@@ -11,6 +11,7 @@ import { AsyncForm } from "./forms/Async";
 import { IntlForm } from "./forms/Intl";
 import { RadioForm } from "./forms/RadioButtons";
 import { LinkedInputForm } from "./forms/LinkedInput";
+import { FieldArrayForm } from "./forms/FieldArrayForm";
 
 addLocaleData([...en, ...fr]);
 
@@ -28,6 +29,10 @@ export class App extends React.Component<{}, { locale: string }> {
                 messages={translations[this.state.locale]}
             >
                 <div>
+                    <Segment padded="very">
+                        <FieldArrayForm />
+                    </Segment>
+
                     <Segment padded="very">
                         <BasicForm />
                     </Segment>

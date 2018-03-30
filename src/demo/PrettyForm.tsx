@@ -7,7 +7,6 @@ import { ReversingFieldProps, ReversingField } from "./ReversingField";
 export interface PrettyField {
     name: string;
     label: string;
-    hint: string;
     key?: string;
     reverse?: boolean;
 }
@@ -30,7 +29,7 @@ export const PrettyForm: React.SFC<
 }) => (
     <Form {...form} size="huge" error={true}>
         <Header as="h2">{title}</Header>
-        {fields.map(({ name, label, hint, key, reverse }) => (
+        {fields.map(({ name, label, key, reverse }) => (
             <Field
                 key={key || name}
                 name={name}
@@ -38,7 +37,6 @@ export const PrettyForm: React.SFC<
                 renderProps={{
                     label,
                     submitted,
-                    hint,
                     reverse
                 }}
             />

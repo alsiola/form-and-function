@@ -5,13 +5,12 @@ import { InjectedFieldProps } from "../lib";
 export interface PrettyFieldProps {
     submitted: boolean;
     label: string;
-    hint: string;
 }
 
 export const PrettyField: React.SFC<InjectedFieldProps<PrettyFieldProps>> = ({
     input,
     meta: { valid, pristine, touched, active, error, isValidating },
-    ownProps: { submitted, label, hint }
+    ownProps: { submitted, label }
 }) => (
     <Form.Field>
         <Input

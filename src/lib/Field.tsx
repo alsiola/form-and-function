@@ -1,5 +1,5 @@
 import * as React from "react";
-import { FormState } from "./Form";
+import { FormState, FormActions, FieldMap } from "./Form";
 import { StateEngine } from "./stateEngine";
 import { FieldResult, isInvalidResult } from "./validation/index";
 import { FieldValue } from "./Form";
@@ -69,22 +69,12 @@ export type FieldRecord = FieldRecordAny<FieldMeta>;
 export type FieldRecordUpdate = FieldRecordAny<Partial<FieldMeta>>;
 
 /**
- * This is provided by the Form component when it calls makeField to
- * allow the Field to retrieve state from Form, and to indicate when
- * its value has changed
- */
-export interface FormActions {
-    onChange: (name: string, newValue: FieldValue | undefined) => void;
-    getInitialValue: (name: string) => FieldValue | undefined;
-}
-
-/**
  * formActions allow the field to trigger functions within the parent
  * stateEngine allows the field to update and retrieve values from its parents state
  */
 export const makeField = (
-    formActions: FormActions,
-    stateEngine: StateEngine<FormState>,
+    formActions: FormActions<FieldValue>,
+    stateEngine: StateEngine<FormState<FieldMap>>,
     resetState = true
 ) =>
     class Field<T extends object> extends React.Component<FieldProps<T>, void> {
