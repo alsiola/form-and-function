@@ -24,6 +24,16 @@ export type FormMap = Record<string, FieldRecord | FieldRecord[]>;
 export type FormEventHandler = (values: FormMap) => void | Promise<void>;
 export type MaybeFormEventHandler = FormEventHandler | undefined;
 
+export interface FieldArrayInfo {
+    isFieldArray: true;
+    fieldIndex: number;
+}
+export interface FieldInfo {
+    isFieldArray: false;
+}
+
+export type FieldChangeInfo = FieldArrayInfo | FieldInfo;
+
 /**
  * Props supplied to the render component passed to Form
  * TOwnProps is the type of the Form render components own props
@@ -95,7 +105,7 @@ export interface FormActions<T extends FieldValue | FieldValue[]> {
     onChange: (
         name: string,
         newValue: T | undefined,
-        fieldIndex?: { fieldIndex: number }
+        fieldChangeInfo: FieldChangeInfo
     ) => void;
     getInitialValue: (name: string) => T | undefined;
 }
@@ -295,10 +305,12 @@ export class Form<
     private handleFieldChange = async (
         fieldName: string,
         value: FieldValue | FieldValue[] | undefined,
-        arrayInfo?: { fieldIndex: number }
+        fieldChangeInfo: FieldChangeInfo
     ) => {
-        if (typeof arrayInfo !== undefined) {
+        if (fieldChangeInfo.isFieldArray) {
+            console.log("Field array changed");
         } else {
+            console.log("Field changed");
             await (this.stateEngine as StateEngine<FormState<FieldMap>>).set(
                 ({ fields }) => ({
                     fields: {

@@ -78,10 +78,12 @@ export const makeFieldArray = (
                     },
                     value: initialValue
                 });
+                // Easy way to trigger validation of initialValue
+                formActions.onChange(props.name, initialValues, {
+                    isFieldArray: true,
+                    fieldIndex: i
+                });
             });
-
-            // Easy way to trigger validation of initialValue
-            formActions.onChange(props.name, initialValues);
         }
 
         addField = (fieldIndex: number) => () => {

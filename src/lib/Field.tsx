@@ -109,7 +109,9 @@ export const makeField = (
             });
 
             // Easy way to trigger validation of initialValue
-            formActions.onChange(props.name, initialValue);
+            formActions.onChange(props.name, initialValue, {
+                isFieldArray: false
+            });
         }
 
         /**
@@ -197,7 +199,8 @@ export const makeField = (
 
             formActions.onChange(
                 this.props.name,
-                (setValue && setValue.value) || value
+                (setValue && setValue.value) || value,
+                { isFieldArray: false }
             );
         };
 
