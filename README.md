@@ -162,9 +162,9 @@ import { Form, validation } from "form-and-function";
 
 If this looks long-winded then say hello to some built in validators! Currently we provide the following:
 
-* `validation.atLeast` - Is the value at least some length.
-* `validation.atMost` - Is the value at most some length.
-* `validation.numeric` - Is the value numeric only.
+*   `validation.atLeast` - Is the value at least some length.
+*   `validation.atMost` - Is the value at most some length.
+*   `validation.numeric` - Is the value numeric only.
 
 They can be used as follows:
 
@@ -231,8 +231,8 @@ an array of validators.
 
 ```js
 <Form
-    validators={validation.all({
-        longNumber: validation.combine([
+    validators={validation.create({
+        longNumber: validation.all([
             validation.atLeast(
                 { chars: 3 },
                 {
@@ -258,8 +258,8 @@ an array of strings, and should return a string.
 
 ```js
 <Form
-    validators={validation.all({
-        longNumber: validation.combine([
+    validators={validation.create({
+        longNumber: validation.all([
             validation.atLeast({ chars: 3 }, {
                 short: ({ chars }) => `${chars} characters minimum`,
                 undef: "provided"
