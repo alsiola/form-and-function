@@ -48,7 +48,9 @@ describe("atLeast", () => {
 
     it("calls invalid when value contains less than x chars", () => {
         const invalid = jest.fn();
-        const formatter = jest.fn().mockReturnValue((x, y) => ({ x, y });
+        const formatter = jest
+            .fn()
+            .mockReturnValue((x: any, y: any) => ({ x, y }));
 
         const params = { chars: 3 };
         const msg = {
@@ -83,7 +85,9 @@ describe("atLeast", () => {
 
     it("calls invalid when numeric value contains less than x chars", () => {
         const invalid = jest.fn();
-        const formatter = jest.fn().mockReturnValue((x, y) => ({ x, y });
+        const formatter = jest
+            .fn()
+            .mockReturnValue((x: any, y: any) => ({ x, y }));
 
         const params = { chars: 3 };
         const msg = {
@@ -100,7 +104,9 @@ describe("atLeast", () => {
 
     it("calls invalid when value is undefined", () => {
         const invalid = jest.fn();
-        const formatter = jest.fn().mockReturnValue((x, y) => ({ x, y });
+        const formatter = jest
+            .fn()
+            .mockReturnValue((x: any, y: any) => ({ x, y }));
 
         const params = { chars: 3 };
         const msg = {
