@@ -1,14 +1,15 @@
 {
     "name": "form-and-function",
-    "version": "0.0.2",
+    "version": "0.3.0",
     "main": "dist/form-and-function.cjs.js",
     "module": "dist/form-and-function.esm.js",
     "browser": "dist/form-and-function.umd.js",
     "types": "dist/modules/index.d.ts",
+    "homepage": "https://alsiola.github.io/form-and-function/",
     "dependencies": {},
     "peerDependencies": {
-        "react": "^15",
-        "react-dom": "^15"
+        "react": ">=15",
+        "react-dom": ">=15"
     },
     "devDependencies": {
         "@types/deep-equal": "^1.0.1",
@@ -17,6 +18,7 @@
         "@types/react": "^16.0.34",
         "@types/react-dom": "^16.0.3",
         "@types/react-intl": "^2.3.3",
+        "gh-pages": "^1.1.0",
         "prop-types": "^15.6.0",
         "react": "^16.2.0",
         "react-dom": "^16.2.0",
@@ -25,19 +27,21 @@
         "rimraf": "^2.6.2",
         "rollup": "^0.55.0",
         "rollup-plugin-typescript": "^0.8.1",
+        "rollup-plugin-uglify": "^3.0.0",
         "semantic-ui-css": "^2.2.12",
         "semantic-ui-react": "^0.77.2",
-        "typescript": "^2.8.2"
+        "typescript": "^2.6.2"
     },
     "scripts": {
         "build": "rimraf dist && yarn build-ts && yarn build-rollup",
         "build-rollup": "rollup -c",
         "build-ts": "tsc -p src/lib/tsconfig.build.json",
         "start": "react-scripts-ts start",
-        "build-demo": "react-scripts-ts build",
+        "build-demo": "rimraf docs && react-scripts-ts build && mv build docs",
         "test": "react-scripts-ts test --env=jsdom",
         "eject": "react-scripts-ts eject",
-        "remove-rollup-ts":
-            "rimraf node_modules/rollup-plugin-typescript/node_modules/typescript"
+        "remove-rollup-ts": "rimraf node_modules/rollup-plugin-typescript/node_modules/typescript",
+        "prepublish": "yarn build",
+        "publish-docs": "gh-pages -d docs"
     }
 }

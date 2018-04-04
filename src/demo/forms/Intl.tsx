@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Button, ButtonGroup, Divider } from "semantic-ui-react";
 import { FormattedMessage, InjectedIntlProps, injectIntl } from "react-intl";
-import { Form, validation, Formatter } from "../../lib";
+import { Form, validation } from "../../lib";
 
 import { PrettyForm } from "../PrettyForm";
 import { messages } from "./messages";
@@ -22,7 +22,7 @@ const fields = (formatter: any) => [
 ];
 
 const makeValidators = (
-    formatter: Formatter<FormattedMessage.MessageDescriptor, any>
+    formatter: validation.Formatter<FormattedMessage.MessageDescriptor, any>
 ) =>
     validation.create(
         {
@@ -37,7 +37,9 @@ const makeValidators = (
             ),
             field2: validation.numeric(messages)
         },
-        formatter
+        {
+            formatter
+        }
     );
 
 export interface BasicFormNoIntlProps {

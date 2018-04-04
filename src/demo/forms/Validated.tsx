@@ -15,6 +15,22 @@ const fields = [
     {
         name: "field2",
         label: "Field 2"
+    },
+    {
+        name: "password",
+        label: "Password"
+    },
+    {
+        name: "passwordConfirm",
+        label: "Confirm Password"
+    },
+    {
+        name: "enter3",
+        label: "Enter 3"
+    },
+    {
+        name: "aToF",
+        label: "a - f only"
     }
 ];
 
@@ -40,7 +56,17 @@ const validators = validation.create({
         ],
         errors => `Entry must be ${errors.join(" and ")}.`
     ),
-    field2: validation.atLeast({ chars: 5 })
+    field2: validation.atLeast({ chars: 5 }),
+    password: validation.covalidate(
+        { fields: ["passwordConfirm"] },
+        validation.atLeast({ chars: 5 })
+    ),
+    passwordConfirm: validation.equalTo({ field: "password" }),
+    enter3: validation.exactly({ value: "3" }),
+    aToF: validation.all([
+        validation.matches({ regex: /^[a-f]+$/ }),
+        validation.required()
+    ])
 });
 
 export const ValidatedForm = () => (

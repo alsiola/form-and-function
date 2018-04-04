@@ -14,7 +14,6 @@
         "noImplicitAny": true,
         "strictNullChecks": true,
         "suppressImplicitAnyIndexErrors": true,
-        "noUnusedLocals": true,
         "declaration": true
     },
     "exclude": [
@@ -24,6 +23,7 @@
         "acceptance-tests",
         "webpack",
         "jest",
-        "src/setupTests.ts"
+        "src/setupTests.ts",
+        "**/*.test.ts"
     ]
 }

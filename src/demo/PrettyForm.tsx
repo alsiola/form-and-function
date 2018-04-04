@@ -1,12 +1,15 @@
 import * as React from "react";
-import { InjectedFormProps } from "../lib";
+import { InjectedFormProps, InjectedFieldProps } from "../lib";
 import { Form, Button, Message, Header } from "semantic-ui-react";
 import { PrettyField, PrettyFieldProps } from "./PrettyField";
+import { ReversingFieldProps, ReversingField } from "./ReversingField";
 
 export interface PrettyField {
     name: string;
     label: string;
     hint: string;
+    key?: string;
+    reverse?: boolean;
 }
 
 export interface PrettyFormProps {
@@ -17,45 +20,49 @@ export interface PrettyFormProps {
 }
 
 export const PrettyForm: React.SFC<
-    InjectedFormProps<PrettyFormProps, PrettyFieldProps>
+    InjectedFormProps<PrettyFormProps, PrettyFieldProps | ReversingFieldProps>
 > = ({
     form,
-    meta: { valid, errors, submitted },
+    meta: { valid, errors, submitted, isValidating, isSubmitting },
     actions: { reset },
     ownProps: { fields, title, submitLabel = "Submit", resetLabel = "Reset" },
     Field
 }) => (
     <Form {...form} size="huge" error={true}>
         <Header as="h2">{title}</Header>
-        {fields.map(({ name, label, hint }) => (
+        {fields.map(({ name, label, hint, key, reverse }) => (
             <Field
-                key={name}
+                key={key || name}
                 name={name}
-                onChange={console.log}
-                render={PrettyField}
+                render={reverse ? ReversingField : PrettyField}
                 renderProps={{
                     label,
                     submitted,
-                    hint
+                    hint,
+                    reverse
                 }}
             />
         ))}
-        <Button type="submit">{submitLabel}</Button>
+        <Button type="submit" disabled={isValidating || isSubmitting}>
+            {submitLabel}
+        </Button>
         <Button type="button" onClick={reset}>
             {resetLabel}
         </Button>
         <Message error={true} hidden={!submitted || valid}>
             <Message.Header>You done made a boo boo.</Message.Header>
             <Message.List>
-                {Object.entries(errors).map(([key, value]) =>
-                    fields
-                        .filter(f => f.name === key)
-                        .map(({ label, name }) => (
-                            <Message.Item key={name}>
-                                {label}: {value.error}
-                            </Message.Item>
-                        ))
-                )}
+                {Object.entries(errors).map(([key, { error }]) => (
+                    <Message.Item key={key}>
+                        {
+                            (
+                                fields.find(f => f.name === key) || {
+                                    name: "Form"
+                                }
+                            ).name
+                        }: {error}
+                    </Message.Item>
+                ))}
             </Message.List>
         </Message>
     </Form>

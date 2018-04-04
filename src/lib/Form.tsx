@@ -7,17 +7,19 @@ import {
     validFn,
     FieldResult,
     isInvalidResult,
-    ValidatorFn,
-    ValidationErrors
-} from "./validators";
+    Validator,
+    isCovalidateResult,
+    CovalidatedFieldResult,
+    InvalidFieldResult
+} from "./validation/index";
 
-export type FieldValue = string | boolean | number;
+export type FieldValue = string | number;
 
 export type FieldValueMap = Record<string, FieldValue>;
 export type FieldMap = Record<string, FieldRecord>;
 
-export type EventHandler = (values: FieldMap) => void;
-export type MaybeEventHandler = EventHandler | undefined;
+export type FormEventHandler = (values: FieldMap) => void | Promise<void>;
+export type MaybeFormEventHandler = FormEventHandler | undefined;
 
 /**
  * Props supplied to the render component passed to Form
@@ -37,8 +39,9 @@ export interface InjectedFormProps<
     meta: {
         valid: boolean;
         submitted: boolean;
-        errors: ValidationErrors;
+        errors: Record<string, InvalidFieldResult>;
         isValidating: boolean;
+        isSubmitting: boolean;
     };
     actions: {
         reset: () => void;
@@ -50,14 +53,17 @@ export interface InjectedFormProps<
 /**
  * Props that can be passed to Form
  */
-export interface FormProps<T extends object | void, U extends object | void> {
+export interface FormProps<
+    T extends object | void = {},
+    U extends object | void = {}
+> {
     name: string;
     render: React.SFC<InjectedFormProps<T, U>>;
-    validators?: Record<string, ValidatorFn<FieldValue>>;
+    validators?: Record<string, Validator<FieldValue>>;
     initialValues?: FieldValueMap;
-    onSubmit?: EventHandler;
-    onSubmitFailed?: EventHandler;
-    onChange?: EventHandler;
+    onSubmit?: FormEventHandler;
+    onSubmitFailed?: FormEventHandler;
+    onChange?: FormEventHandler;
     renderProps?: T;
     stateEngine?: StateEngine<FormState>;
 }
@@ -65,6 +71,10 @@ export interface FormProps<T extends object | void, U extends object | void> {
 export interface FormState {
     fields: FieldMap;
     submitted: boolean;
+    meta: {
+        validation: FieldResult;
+        isSubmitting: boolean;
+    };
 }
 
 export class Form<
@@ -93,7 +103,13 @@ export class Form<
             props.stateEngine ||
             componentStateEngine(this, {
                 fields: {},
-                submitted: false
+                submitted: false,
+                meta: {
+                    validation: {
+                        valid: true
+                    },
+                    isSubmitting: false
+                }
             });
         this.makeField();
     }
@@ -112,7 +128,6 @@ export class Form<
         this.Field = makeField(
             {
                 onChange: this.handleFieldChange,
-                validate: this.validate,
                 getInitialValue: this.getInitialValue
             },
             this.stateEngine,
@@ -144,8 +159,11 @@ export class Form<
      * Is every field passing validation
      */
     private allValid = (validationResult: FieldMap): boolean => {
-        return Object.values(validationResult).every(
-            r => r.meta.validation.valid
+        return (
+            this.stateEngine.select(s => s.meta.validation.valid) &&
+            Object.values(validationResult).every(
+                r => (r.meta.validation ? r.meta.validation.valid : true)
+            )
         );
     };
 
@@ -155,23 +173,124 @@ export class Form<
      */
     private validate = async (
         name: string,
-        value: FieldValue
-    ): Promise<FieldResult> => {
+        value: FieldValue | undefined
+    ): Promise<FieldResult | CovalidatedFieldResult> => {
+        const fields = this.stateEngine.select(s => s.fields);
+
+        if (this.props.validators && this.props.validators.form) {
+            const formResult = await this.props.validators.form("", fields);
+
+            if (isCovalidateResult(formResult)) {
+                await formResult.covalidate.map(field =>
+                    this.validate(field, fields[field].value)
+                );
+            } else {
+                await this.stateEngine.set(({ meta }) => ({
+                    meta: {
+                        ...meta,
+                        validation: formResult
+                    }
+                }));
+            }
+        }
+
         if (!this.props.validators) {
             return validFn();
         }
 
         const validator = this.props.validators[name];
 
-        return validator ? validator(value) : validFn();
+        if (!validator) {
+            return validFn();
+        }
+
+        const result = await validator(value, fields);
+
+        return result;
     };
 
     /**
      * Called by Fields when their value changes
      * If a form onChange handler was passed as a prop, call it
      */
-    private handleFieldChange = () => {
-        (this.props.onChange as EventHandler)(
+    private handleFieldChange = async (
+        fieldName: string,
+        value: FieldValue | undefined
+    ) => {
+        await this.stateEngine.set(({ fields }) => ({
+            fields: {
+                ...fields,
+                [fieldName]: {
+                    ...fields[fieldName],
+                    value,
+                    meta: {
+                        ...(fields[fieldName] || {}).meta,
+                        isValidating: true
+                    }
+                }
+            }
+        }));
+
+        this.validate(fieldName, value).then(validation => {
+            if (isCovalidateResult(validation)) {
+                Promise.all(
+                    validation.covalidate.map(async covalidatedField => ({
+                        covalidatedField,
+                        result: await this.validate(
+                            covalidatedField,
+                            this.stateEngine.select(
+                                s => s.fields[covalidatedField].value
+                            )
+                        )
+                    }))
+                ).then(covalidateResults => {
+                    this.stateEngine.set(({ fields }) => ({
+                        fields: {
+                            ...fields,
+                            ...covalidateResults.reduce(
+                                (out, { covalidatedField, result }) => ({
+                                    ...out,
+                                    [covalidatedField]: {
+                                        ...fields[covalidatedField],
+                                        meta: {
+                                            ...(fields[covalidatedField] || {})
+                                                .meta,
+                                            validation: result,
+                                            isValidating: false
+                                        }
+                                    }
+                                }),
+                                {}
+                            ),
+                            [fieldName]: {
+                                ...fields[fieldName],
+                                meta: {
+                                    ...(fields[fieldName] || {}).meta,
+                                    validation: validation.result,
+                                    isValidating: false
+                                }
+                            }
+                        }
+                    }));
+                });
+            } else {
+                this.stateEngine.set(({ fields }) => ({
+                    fields: {
+                        ...fields,
+                        [fieldName]: {
+                            ...fields[fieldName],
+                            meta: {
+                                ...(fields[fieldName] || {}).meta,
+                                validation,
+                                isValidating: false
+                            }
+                        }
+                    }
+                }));
+            }
+        });
+
+        (this.props.onChange as FormEventHandler)(
             this.stateEngine.select(s => s.fields)
         );
     };
@@ -181,16 +300,28 @@ export class Form<
      * depending on current validation status
      */
     private handleSubmit = (
-        onSubmit: MaybeEventHandler,
-        onFailedSubmit: MaybeEventHandler,
+        onSubmit: MaybeFormEventHandler,
+        onFailedSubmit: MaybeFormEventHandler,
         valid: boolean,
         fields: FieldMap
     ) => (e?: SyntheticEvent<any>) => {
         e && e.preventDefault();
-        this.stateEngine.set({ submitted: true });
-        valid
-            ? (onSubmit as EventHandler)(fields)
-            : (onFailedSubmit as EventHandler)(fields);
+        this.stateEngine.set(({ meta }) => ({
+            submitted: true,
+            meta: { ...meta, isSubmitting: true }
+        }));
+        Promise.resolve(
+            valid
+                ? (onSubmit as FormEventHandler)(fields)
+                : (onFailedSubmit as FormEventHandler)(fields)
+        ).then(() =>
+            this.stateEngine.set(({ meta }) => ({
+                meta: {
+                    ...meta,
+                    isSubmitting: false
+                }
+            }))
+        );
     };
 
     render() {
@@ -202,7 +333,11 @@ export class Form<
             renderProps
         } = this.props;
 
-        const { submitted, fields } = this.stateEngine.get();
+        const {
+            submitted,
+            fields,
+            meta: { validation, isSubmitting }
+        } = this.stateEngine.get();
 
         const valid = this.allValid(fields);
 
@@ -224,7 +359,7 @@ export class Form<
                                 }
                               : {}
                       ),
-                  {} as ValidationErrors
+                  isInvalidResult(validation) ? { form: validation } : {}
               );
 
         const isValidating = Object.values(fields).some(
@@ -244,7 +379,8 @@ export class Form<
                 valid,
                 submitted,
                 errors: validationResult,
-                isValidating
+                isValidating,
+                isSubmitting
             },
             Field: this.Field,
             values: fields,
